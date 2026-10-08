@@ -100,7 +100,15 @@ h2.anchored { border-bottom: none; }
   background: var(--cartao); border: 1px solid var(--linha); border-radius: 14px;
   padding: 0.7rem 1rem 0.8rem; margin: 0 0 0.8rem; display: flex; flex-direction: column; gap: 0.6rem;
 }
-.fb-toggle { display: none; }
+.fb-toggle {
+  display: inline-flex; align-items: center; gap: 0.4rem; align-self: flex-start; text-align: left; font-weight: 700; font-size: 0.74rem;
+  text-transform: uppercase; letter-spacing: 0.08em; color: var(--suave); background: none; border: 0; padding: 0; cursor: pointer;
+}
+.fb-toggle:hover, .fb-toggle:focus-visible { color: var(--tinta); }
+.fb-toggle::after { content: "\25B4"; font-size: 0.8em; }
+.filtros.recolhido .fb-toggle::after { content: "\25BE"; }
+.filtros.recolhido .fb-linha { display: none; }
+.filtros.recolhido { padding-top: 0.5rem; padding-bottom: 0.5rem; margin-bottom: 0.5rem; }
 .fb-linha { display: flex; align-items: flex-end; gap: 0.6rem 0.8rem; min-width: 0; }
 .fb-titulo {
   flex: 0 0 8.5rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;
@@ -265,13 +273,6 @@ h2.anchored { border-bottom: none; }
   .chips-tipos .chip-tipo { flex: none; font-size: 0.76rem; }
 }
 @media (max-width: 991px) {
-  .fb-toggle {
-    display: block; text-align: left; font-weight: 700; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em;
-    color: var(--suave); background: none; border: 0; padding: 0; cursor: pointer;
-  }
-  .fb-toggle::after { content: " \25BE"; }
-  .filtros.recolhido .fb-linha { display: none; }
-  .filtros.recolhido { padding-bottom: 0.7rem; }
   .barra-mapa .status { flex-basis: 100%; }
 }
 

@@ -30,7 +30,7 @@ sd_tabela <- SharedData$new(escolas[, colunas_tabela], key = ~id, group = "escol
 
 escolas_mapa <- escolas %>%
   filter(!is.na(lat), !is.na(lon)) %>%
-  mutate(raio = round(pmin(2.5 + sqrt(concluintes) / 3.2, 10), 1),
+  mutate(raio = round(pmin(1.8 + sqrt(concluintes) / 4.6, 7), 1),
          cor = unname(PALETA_TIPOLOGIA[tipologia]))
 
 sd_mapa <- SharedData$new(escolas_mapa %>% select(id, lat, lon, raio, cor),
@@ -74,7 +74,7 @@ campo <- function(id, rotulo) {
 
 filtros <- div(
   class = "filtros",
-  tags$button(type = "button", class = "fb-toggle", "Filtros"),
+  tags$button(type = "button", class = "fb-toggle", `aria-expanded` = "true", "Ocultar filtros"),
   div(class = "fb-linha fb-linha-selects",
       span(class = "fb-titulo", "Território"),
       campo("reg", "Região"), campo("uf", "UF"), campo("mun", "Município"), campo("loc", "Localização"),
@@ -190,7 +190,7 @@ mapa <- leaflet(sd_mapa, height = 680,
                 options = leafletOptions(preferCanvas = TRUE, minZoom = 3, maxZoom = 18, zoomSnap = 0.5)) %>%
   addCircleMarkers(lng = ~lon, lat = ~lat, layerId = ~id, group = "Escolas",
                    radius = ~raio, fillColor = ~cor, fillOpacity = 0.85,
-                   color = "#ffffff", weight = 0.6, opacity = 0.9) %>%
+                   color = "#ffffff", weight = 0.4, opacity = 0.9) %>%
   addScaleBar(position = "bottomleft", options = scaleBarOptions(imperial = FALSE)) %>%
   fitBounds(-73.9, -33.9, -34.7, 5.4) %>%
   htmlwidgets::onRender(js_controles, data = dados_js)

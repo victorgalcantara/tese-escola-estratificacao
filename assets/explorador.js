@@ -684,14 +684,26 @@ function(el, x, dados) {
   function recolherFiltros() {
     setTimeout(function () {
       var f = q(".filtros");
-      if (f && window.innerWidth < 992) f.classList.add("recolhido");
+      if (f && window.innerWidth < 992) { f.classList.add("recolhido"); rotuloFiltros(); }
     }, 600);
   }
   var tituloFiltros = q(".fb-toggle");
-  if (tituloFiltros) tituloFiltros.addEventListener("click", function () {
-    q(".filtros").classList.toggle("recolhido");
-    setTimeout(function () { window.dispatchEvent(new Event("resize")); }, 50);   // as faixas recalculam a largura
-  });
+  function rotuloFiltros() {
+    if (!tituloFiltros) return;
+    var fechado = q(".filtros").classList.contains("recolhido");
+    tituloFiltros.firstChild.nodeValue = fechado ? "Mostrar filtros" : "Ocultar filtros";
+    tituloFiltros.setAttribute("aria-expanded", String(!fechado));
+    tituloFiltros.title = fechado ? "Mostrar a caixa de filtros (os filtros aplicados continuam valendo)" : "Ocultar a caixa de filtros para ganhar espaço";
+  }
+  if (tituloFiltros) {
+    rotuloFiltros();
+    tituloFiltros.addEventListener("click", function () {
+      q(".filtros").classList.toggle("recolhido");
+      rotuloFiltros();
+      setTimeout(function () { window.dispatchEvent(new Event("resize")); }, 50);   // as faixas recalculam a largura
+      if (typeof map !== "undefined" && map.invalidateSize) setTimeout(function () { map.invalidateSize(); }, 120);
+    });
+  }
   if (document.readyState === "complete") recolherFiltros();
   else window.addEventListener("load", recolherFiltros);
 
