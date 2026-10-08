@@ -1,5 +1,5 @@
 ---
-title: "Resultados por tipo de escola"
+title: "Descrição"
 subtitle: "Características das escolas e destinos dos egressos da coorte de concluintes de 2015, segundo o tipo escolar."
 page-layout: article
 ---
@@ -21,20 +21,9 @@ celula_tipo <- function(v) if (v %in% names(PALETA_TIPOLOGIA)) etiqueta_tipo(v) 
 linha_brasil <- function(tab) function(i) if (tab$tipologia[i] == "Brasil (dez tipos)") "linha-brasil"
 
 fonte_sedap <- "Censo Escolar 2015 (Inep), pareado a Enem, Censo da Educação Superior e Rais no Sedap/Inep"
-definicoes <- definicoes_tipo()
 ```
 
 Comparações descritivas: as diferenças entre tipos combinam a seleção social dos estudantes e o que as escolas fazem com eles. Para ver as escolas de cada tipo, use o [explorador](escolas.qmd).
-
-## Os tipos
-
-```{r}
-#| label: lista-tipos
-div(class = "lista-tipos",
-    lapply(ORDEM_TIPOLOGIA_C4, function(t) {
-      div(class = "item-tipo", etiqueta_tipo(t), span(definicoes[[t]]))
-    }))
-```
 
 ## Características das escolas
 
@@ -71,179 +60,182 @@ reactable(
 #| label: legenda-indicadores
 legenda(
   fonte = "Censo Escolar 2015 e indicadores do Inep (ICG e AFD); NSE (Alves, Rodrigues e Senkevics, 2023); IIE (Alcantara, 2025); Censo Demográfico 2010 (IBGE).",
-  nota = "médias ou percentuais entre as escolas, sem ponderação; PPI entre os concluintes com cor ou raça declarada; ICG 5 e 6: percentual de escolas nesses níveis de complexidade de gestão; renda do entorno: mediana entre as escolas, em salários mínimos de 2015. Base local de escolas; ver Sobre os dados."
+  nota = "médias ou percentuais entre as escolas, sem ponderação; PPI entre os concluintes com cor ou raça declarada; ICG 5 e 6: percentual de escolas nesses níveis de complexidade de gestão; renda do entorno: mediana entre as escolas, em salários mínimos de 2015. Base local de escolas; ver a aba Dados."
 )
 ```
 
-## Educação superior e Enem
+## Resultados dos egressos
+
+Escolha o conjunto de resultados e alterne entre a tabela e o gráfico de barras.
 
 ```{r}
-#| label: grafico-es
-d <- educacao %>% filter(tipologia != "Brasil (dez tipos)") %>%
-  mutate(tipologia = fator_tipos(tipologia))
+#| label: barra-filtros
+HTML('
+<div class="desc-barra">
+  <div class="seg" id="seg-filtro" role="group" aria-label="Resultados">
+    <button type="button" data-f="enem" aria-pressed="true"><b>Enem</b> | Processo Seletivo</button>
+    <button type="button" data-f="acesso" aria-pressed="false"><b>Acesso</b> | Educação Superior</button>
+    <button type="button" data-f="retornos" aria-pressed="false"><b>Retornos</b> | Mercado de Trabalho</button>
+  </div>
+  <div class="seg seg-vista" id="seg-vista" role="group" aria-label="Forma de exibição">
+    <button type="button" data-v="tabela" aria-pressed="true">Tabela</button>
+    <button type="button" data-v="grafico" aria-pressed="false">Gráfico</button>
+  </div>
+</div>')
+```
 
-series <- list(
-  list(var = "p_es", nome = "Ingressou na ES até 2020", cor = "#0f1b2d"),
-  list(var = "p_es_prv", nome = "ES privada", cor = "#9aa5b1"),
-  list(var = "p_es_pub", nome = "ES pública", cor = "#1f63a8"),
-  list(var = "p_es_top", nome = "Públicas de maior prestígio", cor = "#c8553d")
-)
-g <- plot_ly()
-for (s in series) {
-  g <- g %>% add_bars(data = d, y = ~tipologia, x = d[[s$var]], name = s$nome,
-                      orientation = "h", marker = list(color = s$cor),
-                      text = pct_br(d[[s$var]], 1), textposition = "none",
-                      hovertemplate = paste0("%{y}<br>", s$nome, ": %{text}<extra></extra>"))
+```{r}
+#| label: auxiliares
+tabela_base <- function(tab, colunas, minw = 84) {
+  reactable(
+    tab, pagination = FALSE, compact = TRUE, borderless = TRUE, highlight = TRUE, sortable = TRUE,
+    rowClass = linha_brasil(tab),
+    defaultColDef = colDef(align = "right", headerVAlign = "bottom", minWidth = minw),
+    columns = c(list(tipologia = colDef(name = "Tipo", align = "left", minWidth = 170, cell = celula_tipo)), colunas)
+  )
 }
-g %>% tema_plotly(x_titulo = "% dos concluintes do tipo", legenda_visivel = TRUE,
-                  barmode = "group", bargap = 0.25, height = 560,
-                  xaxis = list(title = "% dos concluintes do tipo", range = c(0, 100),
-                               ticksuffix = "%", gridcolor = "#e6e8eb"),
-                  yaxis = list(title = "", automargin = TRUE),
-                  legend = list(orientation = "h", x = 0, y = 1.07, traceorder = "normal"))
+
+# Barras horizontais por tipo; series = lista de (var, nome, cor)
+barras_tipo <- function(d, series, x_titulo, faixa = c(0, 100), sufixo = "%", altura = 520,
+                        modo = "group", fmt = function(v) pct_br(v, 1), legenda_on = TRUE) {
+  d <- d %>% filter(tipologia != "Brasil (dez tipos)") %>% mutate(tipologia = fator_tipos(tipologia))
+  g <- plot_ly()
+  for (s in series) {
+    g <- g %>% add_bars(data = d, y = ~tipologia, x = d[[s$var]], name = s$nome,
+                        orientation = "h", marker = list(color = s$cor),
+                        text = fmt(d[[s$var]]), textposition = "none",
+                        hovertemplate = paste0("%{y}<br>", s$nome, ": %{text}<extra></extra>"))
+  }
+  g %>% tema_plotly(legenda_visivel = legenda_on, barmode = modo, bargap = 0.25, height = altura,
+                    xaxis = list(title = x_titulo, range = faixa, ticksuffix = sufixo, gridcolor = "#e6e8eb"),
+                    yaxis = list(title = "", automargin = TRUE),
+                    legend = list(orientation = "h", x = 0, y = 1.07, traceorder = "normal"))
+}
+
+painel <- function(f, v, ...) div(class = "painel", `data-f` = f, `data-v` = v, ...)
 ```
 
 ```{r}
-#| label: tabela-es
-tab <- educacao %>% ordenar_c4() %>%
-  select(tipologia, concluintes, p_enem, nota_enem, p_es, p_es_pub, p_es_top, p_es_prv)
+#| label: paineis
+leg_sedap <- function(nota) legenda(fonte = paste0(fonte_sedap, " (", meta$extracao_sedap, ")."), nota = nota)
 
-reactable(
-  tab, pagination = FALSE, compact = TRUE, borderless = TRUE, highlight = TRUE, sortable = TRUE,
-  rowClass = linha_brasil(tab),
-  defaultColDef = colDef(align = "right", headerVAlign = "bottom", minWidth = 84),
-  columns = list(
-    tipologia = colDef(name = "Tipo", align = "left", minWidth = 170, cell = celula_tipo),
+# Enem ---------------------------------------------------------------------------------
+enem_tab <- educacao %>% ordenar_c4() %>% select(tipologia, concluintes, p_enem, nota_enem)
+p_enem_tabela <- painel("enem", "tabela",
+  tabela_base(enem_tab, list(
     concluintes = colDef(name = "Concluintes", format = fmt_int),
     p_enem = colDef(name = "Participou do Enem", format = fmt_pct(1)),
-    nota_enem = colDef(name = "Nota média Enem", format = fmt_dec(1)),
+    nota_enem = colDef(name = "Nota média Enem", format = fmt_dec(1)))),
+  leg_sedap("percentuais sobre os concluintes de cada tipo; participou: presente nas provas objetivas em ao menos uma edição de 2015 a 2019. Brasil: conjunto dos dez tipos, ponderado pelos concluintes; nota ponderada pelos participantes."))
+p_enem_grafico <- painel("enem", "grafico",
+  div(class = "graficos-2",
+      div(h4(class = "graf-tit", "Participou do Enem (% dos concluintes)"),
+          barras_tipo(educacao, list(list(var = "p_enem", nome = "Participou do Enem", cor = "#1f63a8")),
+                      "% dos concluintes do tipo", legenda_on = FALSE, altura = 500)),
+      div(h4(class = "graf-tit", "Nota média no Enem"),
+          barras_tipo(educacao, list(list(var = "nota_enem", nome = "Nota média", cor = "#0f1b2d")),
+                      "Nota média nas provas objetivas", faixa = c(400, 700), sufixo = "",
+                      fmt = function(v) num_br(v, 1), legenda_on = FALSE, altura = 500))),
+  leg_sedap("percentuais sobre os concluintes de cada tipo; nota média das quatro provas objetivas, entre os participantes."))
+
+# Acesso à educação superior -------------------------------------------------------------
+acesso_tab <- educacao %>% ordenar_c4() %>% select(tipologia, concluintes, p_es, p_es_pub, p_es_top, p_es_prv)
+p_acesso_tabela <- painel("acesso", "tabela",
+  tabela_base(acesso_tab, list(
+    concluintes = colDef(name = "Concluintes", format = fmt_int),
     p_es = colDef(name = "Ingressou na ES até 2020", format = fmt_pct(1), minWidth = 96),
     p_es_pub = colDef(name = "ES pública", format = fmt_pct(1)),
     p_es_top = colDef(name = "Públicas de maior prestígio", format = fmt_pct(1), minWidth = 96),
-    p_es_prv = colDef(name = "ES privada", format = fmt_pct(1))
-  )
-)
-```
+    p_es_prv = colDef(name = "ES privada", format = fmt_pct(1)))),
+  leg_sedap("percentuais sobre os concluintes de cada tipo; um estudante pode ter ingressado nos setores público e privado em anos diferentes. Brasil: conjunto dos dez tipos, ponderado pelos concluintes."))
+p_acesso_grafico <- painel("acesso", "grafico",
+  barras_tipo(educacao, list(
+    list(var = "p_es", nome = "Ingressou na ES até 2020", cor = "#0f1b2d"),
+    list(var = "p_es_prv", nome = "ES privada", cor = "#9aa5b1"),
+    list(var = "p_es_pub", nome = "ES pública", cor = "#1f63a8"),
+    list(var = "p_es_top", nome = "Públicas de maior prestígio", cor = "#c8553d")),
+    "% dos concluintes do tipo", altura = 600),
+  leg_sedap("percentuais sobre os concluintes de cada tipo; um estudante pode ter ingressado nos setores público e privado em anos diferentes."))
 
-```{r}
-#| label: legenda-es
-legenda(
-  fonte = paste0(fonte_sedap, " (", meta$extracao_sedap, ")."),
-  nota = "percentuais sobre os concluintes de cada tipo; um estudante pode ter ingressado nos setores público e privado em anos diferentes. Brasil: conjunto dos dez tipos, ponderado pelos concluintes; nota ponderada pelos participantes."
-)
-```
+# Retornos no mercado de trabalho -----------------------------------------------------------
+trab_tab <- trabalho %>% ordenar_c4() %>% select(tipologia, p_coorte, p_ocupado, p_dirigentes, p_tecnicos, p_industria, p_servicos)
+sal_tab <- salarios %>% ordenar_c4() %>% select(tipologia, media, mediana, dp, q90, q95, q99, q999)
+sal_cel <- function(v) num_br(v, 0)
 
-## Mercado de trabalho formal em 2025
-
-```{r}
-#| label: grafico-trabalho
-d <- trabalho %>% filter(tipologia != "Brasil (dez tipos)") %>%
-  mutate(tipologia = fator_tipos(tipologia))
-series <- list(
-  list(var = "p_dirigentes", nome = "Dirigentes e profissionais", cor = "#c8553d"),
-  list(var = "p_tecnicos", nome = "Técnicos de nível médio", cor = "#d9a441"),
-  list(var = "p_servicos", nome = "Serviços e administrativos", cor = "#5b8db8"),
-  list(var = "p_industria", nome = "Produção industrial", cor = "#7a8794")
-)
-g <- plot_ly()
-for (s in series) {
-  g <- g %>% add_bars(data = d, y = ~tipologia, x = d[[s$var]], name = s$nome,
-                      orientation = "h", marker = list(color = s$cor),
-                      text = pct_br(d[[s$var]], 1), textposition = "none",
-                      hovertemplate = paste0("%{y}<br>", s$nome, ": %{text}<extra></extra>"))
+d_trab <- trabalho %>% filter(tipologia != "Brasil (dez tipos)") %>% mutate(tipologia = fator_tipos(tipologia))
+g_trab <- plot_ly()
+for (s in list(list(var = "p_dirigentes", nome = "Dirigentes e profissionais", cor = "#c8553d"),
+               list(var = "p_tecnicos", nome = "Técnicos de nível médio", cor = "#d9a441"),
+               list(var = "p_servicos", nome = "Serviços e administrativos", cor = "#5b8db8"),
+               list(var = "p_industria", nome = "Produção industrial", cor = "#7a8794"))) {
+  g_trab <- g_trab %>% add_bars(data = d_trab, y = ~tipologia, x = d_trab[[s$var]], name = s$nome,
+                                orientation = "h", marker = list(color = s$cor),
+                                text = pct_br(d_trab[[s$var]], 1), textposition = "none",
+                                hovertemplate = paste0("%{y}<br>", s$nome, ": %{text}<extra></extra>"))
 }
-g %>% add_markers(data = d, y = ~tipologia, x = ~p_ocupado, name = "Ocupados (total)",
-                  marker = list(symbol = "line-ns", size = 18, color = "#0f1b2d",
-                                line = list(width = 3, color = "#0f1b2d")),
-                  text = pct_br(d$p_ocupado, 1),
-                  hovertemplate = "%{y}<br>Ocupados: %{text}<extra></extra>") %>%
+g_trab <- g_trab %>% add_markers(data = d_trab, y = ~tipologia, x = ~p_ocupado, name = "Ocupados (total)",
+                  marker = list(symbol = "line-ns", size = 18, color = "#0f1b2d", line = list(width = 3, color = "#0f1b2d")),
+                  text = pct_br(d_trab$p_ocupado, 1), hovertemplate = "%{y}<br>Ocupados: %{text}<extra></extra>") %>%
   tema_plotly(legenda_visivel = TRUE, barmode = "stack", bargap = 0.3, height = 520,
-              xaxis = list(title = "% dos concluintes do tipo", range = c(0, 70),
-                           ticksuffix = "%", gridcolor = "#e6e8eb"),
-              yaxis = list(title = "", automargin = TRUE),
-              legend = list(orientation = "h", x = 0, y = 1.08))
+              xaxis = list(title = "% dos concluintes do tipo", range = c(0, 70), ticksuffix = "%", gridcolor = "#e6e8eb"),
+              yaxis = list(title = "", automargin = TRUE), legend = list(orientation = "h", x = 0, y = 1.08))
+
+g_sal <- barras_tipo(salarios, list(
+    list(var = "mediana", nome = "Mediana", cor = "#1f63a8"),
+    list(var = "media", nome = "Média", cor = "#0f1b2d"),
+    list(var = "q90", nome = "Percentil 90", cor = "#c8553d")),
+  "R$ correntes de 2025", faixa = NULL, sufixo = "", altura = 620, fmt = reais_br)
+g_sal <- g_sal %>% layout(xaxis = list(tickprefix = "R$ ", tickformat = ",.0f", range = NULL, autorange = TRUE))
+
+p_retornos_tabela <- painel("retornos", "tabela",
+  h3("Ocupação em 2025"),
+  tabela_base(trab_tab, list(
+    p_coorte = colDef(name = "% da coorte", format = fmt_pct(1), minWidth = 90),
+    p_ocupado = colDef(name = "Ocupados", format = fmt_pct(1), minWidth = 90),
+    p_dirigentes = colDef(name = "Dirigentes e profissionais", format = fmt_pct(1), minWidth = 110),
+    p_tecnicos = colDef(name = "Técnicos", format = fmt_pct(1), minWidth = 90),
+    p_industria = colDef(name = "Indústria", format = fmt_pct(1), minWidth = 90),
+    p_servicos = colDef(name = "Serviços", format = fmt_pct(1), minWidth = 90))),
+  leg_sedap("percentuais sobre os concluintes do tipo. Ocupados: vínculo formal na Rais de 2025. Grandes grupos da CBO 2002: dirigentes e profissionais (1 e 2), técnicos de nível médio (3), serviços e administrativos (4 e 5) e produção industrial (7, 8 e 9); a diferença para o total corresponde a outros grupos."),
+  h3("Remuneração"),
+  tabela_base(sal_tab, list(
+    media = colDef(name = "Média", cell = sal_cel), mediana = colDef(name = "Mediana", cell = sal_cel),
+    dp = colDef(name = "Desvio-padrão", cell = sal_cel), q90 = colDef(name = "P90", cell = sal_cel),
+    q95 = colDef(name = "P95", cell = sal_cel), q99 = colDef(name = "P99", cell = sal_cel),
+    q999 = colDef(name = "P99,9", cell = sal_cel))),
+  leg_sedap("última remuneração nominal registrada em 2025 no vínculo selecionado, entre os ocupados, em R$ correntes. Brasil: média e desvio-padrão combinados a partir dos agregados por tipo; os percentis do conjunto não são recuperáveis (n.d.)."))
+p_retornos_grafico <- painel("retornos", "grafico",
+  h3("Ocupação em 2025"), g_trab,
+  leg_sedap("percentuais sobre os concluintes do tipo; a barra empilhada mostra os grandes grupos ocupacionais e o traço, o total de ocupados (vínculo formal na Rais de 2025)."),
+  h3("Remuneração"), g_sal,
+  leg_sedap("última remuneração nominal registrada em 2025 no vínculo selecionado, entre os ocupados, em R$ correntes."))
+
+div(class = "paineis",
+    p_enem_tabela, p_enem_grafico, p_acesso_tabela, p_acesso_grafico, p_retornos_tabela, p_retornos_grafico)
 ```
 
-```{r}
-#| label: tabela-trabalho
-tab <- trabalho %>% ordenar_c4() %>%
-  select(tipologia, p_coorte, p_ocupado, p_dirigentes, p_tecnicos, p_industria, p_servicos)
-reactable(
-  tab, pagination = FALSE, compact = TRUE, borderless = TRUE, highlight = TRUE, sortable = TRUE,
-  rowClass = linha_brasil(tab),
-  defaultColDef = colDef(align = "right", headerVAlign = "bottom", minWidth = 90, format = fmt_pct(1)),
-  columns = list(
-    tipologia = colDef(name = "Tipo", align = "left", minWidth = 170, cell = celula_tipo),
-    p_coorte = colDef(name = "% da coorte"),
-    p_ocupado = colDef(name = "Ocupados"),
-    p_dirigentes = colDef(name = "Dirigentes e profissionais", minWidth = 110),
-    p_tecnicos = colDef(name = "Técnicos"),
-    p_industria = colDef(name = "Indústria"),
-    p_servicos = colDef(name = "Serviços")
-  )
-)
-```
-
-```{r}
-#| label: legenda-trabalho
-legenda(
-  fonte = paste0(fonte_sedap, " (", meta$extracao_sedap, ")."),
-  nota = "percentuais sobre os concluintes do tipo. Ocupados: vínculo formal na Rais de 2025. Grandes grupos da CBO 2002: dirigentes e profissionais (1 e 2), técnicos de nível médio (3), serviços e administrativos (4 e 5) e produção industrial (7, 8 e 9); a diferença para o total corresponde a outros grupos."
-)
-```
-
-### Remuneração
-
-```{r}
-#| label: grafico-salarios
-d <- salarios %>% filter(tipologia != "Brasil (dez tipos)") %>%
-  arrange(mediana) %>%
-  mutate(tipologia = factor(tipologia, levels = tipologia),
-         cor = unname(PALETA_TIPOLOGIA[as.character(tipologia)]))
-
-plot_ly(d) %>%
-  add_segments(x = ~mediana, xend = ~q90, y = ~tipologia, yend = ~tipologia,
-               line = list(color = "#c9ced6", width = 6), name = "Mediana ao percentil 90",
-               hoverinfo = "none") %>%
-  add_markers(x = ~media, y = ~tipologia, name = "Média",
-              marker = list(symbol = "diamond", size = 10, color = "#0f1b2d"),
-              text = reais_br(d$media), hovertemplate = "%{y}<br>Média: %{text}<extra></extra>") %>%
-  add_markers(x = ~mediana, y = ~tipologia, name = "Mediana",
-              marker = list(size = 14, color = ~cor, line = list(color = "white", width = 1.5)),
-              text = reais_br(d$mediana), hovertemplate = "%{y}<br>Mediana: %{text}<extra></extra>") %>%
-  add_markers(x = ~q90, y = ~tipologia, name = "Percentil 90",
-              marker = list(symbol = "line-ns", size = 14, color = "#5b6573", line = list(width = 2, color = "#5b6573")),
-              text = reais_br(d$q90), hovertemplate = "%{y}<br>Percentil 90: %{text}<extra></extra>") %>%
-  tema_plotly(legenda_visivel = TRUE, height = 500,
-              xaxis = list(title = "R$ correntes de 2025", tickprefix = "R$ ", tickformat = ",.0f",
-                           gridcolor = "#e6e8eb"),
-              yaxis = list(title = "", automargin = TRUE),
-              legend = list(orientation = "h", x = 0, y = 1.08))
-```
-
-```{r}
-#| label: tabela-salarios
-tab <- salarios %>% ordenar_c4() %>% select(tipologia, media, mediana, dp, q90, q95, q99, q999)
-reactable(
-  tab, pagination = FALSE, compact = TRUE, borderless = TRUE, highlight = TRUE, sortable = TRUE,
-  rowClass = linha_brasil(tab),
-  defaultColDef = colDef(align = "right", headerVAlign = "bottom", minWidth = 84,
-                         cell = function(v) num_br(v, 0)),
-  columns = list(
-    tipologia = colDef(name = "Tipo", align = "left", minWidth = 170, cell = celula_tipo),
-    media = colDef(name = "Média"),
-    mediana = colDef(name = "Mediana"),
-    dp = colDef(name = "Desvio-padrão"),
-    q90 = colDef(name = "P90"), q95 = colDef(name = "P95"),
-    q99 = colDef(name = "P99"), q999 = colDef(name = "P99,9")
-  )
-)
-```
-
-```{r}
-#| label: legenda-salarios
-legenda(
-  fonte = paste0(fonte_sedap, " (", meta$extracao_sedap, ")."),
-  nota = "última remuneração nominal registrada em 2025 no vínculo selecionado, entre os ocupados, em R$ correntes; tipos ordenados pela mediana no gráfico. Brasil: média e desvio-padrão combinados a partir dos agregados por tipo; os percentis do conjunto não são recuperáveis (n.d.)."
-)
+```{=html}
+<script>
+(function () {
+  var estado = { f: "enem", v: "tabela" };
+  var paineis = document.querySelectorAll(".painel");
+  var botoesF = document.querySelectorAll("#seg-filtro button");
+  var botoesV = document.querySelectorAll("#seg-vista button");
+  function atualizar() {
+    paineis.forEach(function (p) {
+      p.classList.toggle("ativo", p.getAttribute("data-f") === estado.f && p.getAttribute("data-v") === estado.v);
+    });
+    botoesF.forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-f") === estado.f)); });
+    botoesV.forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-v") === estado.v)); });
+    // graficos criados com o painel oculto precisam recalcular a largura
+    setTimeout(function () { window.dispatchEvent(new Event("resize")); }, 60);
+    try { history.replaceState(null, "", "#" + estado.f + "-" + estado.v); } catch (e) { /* ignora */ }
+  }
+  botoesF.forEach(function (b) { b.addEventListener("click", function () { estado.f = b.getAttribute("data-f"); atualizar(); }); });
+  botoesV.forEach(function (b) { b.addEventListener("click", function () { estado.v = b.getAttribute("data-v"); atualizar(); }); });
+  var m = location.hash.match(/^#(enem|acesso|retornos)-(tabela|grafico)$/);
+  if (m) { estado.f = m[1]; estado.v = m[2]; }
+  atualizar();
+})();
+</script>
 ```

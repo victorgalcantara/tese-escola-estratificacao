@@ -1,26 +1,29 @@
 ---
-title: "Sobre os dados"
-subtitle: "Definições dos indicadores e dos resultados, fontes e cuidados na divulgação."
+title: "Dados"
+subtitle: "Fontes oficiais, protocolos de acesso, definições dos indicadores e cuidados na divulgação."
 page-layout: article
 ---
 
 ```{r}
 #| label: setup
 source("R/funcoes_site.R", encoding = "UTF-8")
-definicoes <- definicoes_tipo()
 ```
 
 O site reúne as escolas brasileiras que ofertam o Ensino Médio, classificadas em tipos escolares, e os resultados dos concluintes de 2015 no Enem, na educação superior e no mercado de trabalho formal. A análise completa está no texto da tese.
 
-## Tipos escolares
+Parte das bases é de acesso público. Outra parte, a que liga estudantes, escolas e destinos pelo CPF, é de acesso controlado e só pôde ser usada mediante aprovação, em ambiente protegido.
 
-```{r}
-#| label: tipos
-div(class = "lista-tipos",
-    lapply(names(definicoes), function(t) div(class = "item-tipo", etiqueta_tipo(t), span(definicoes[[t]]))))
-```
+::: {.protocolos}
+### Aprovação do acesso e uso dos dados protegidos
 
-Cada escola recebe um único tipo, na ordem: Federal, Municipal, vínculo diferenciado, localização diferenciada e, por fim, NSE. Os cortes do NSE são calculados sobre as `r num_br(meta$cortes_nse$escolas_referencia[1])` escolas estaduais e privadas com NSE registrado.
+- **Inep, Serviço de Acesso a Dados Protegidos (Sedap).** O Censo Escolar, o Enem e o Censo da Educação Superior pareados pelo CPF mascarado foram acessados com aprovação do Sedap/Inep, no processo SEI nº 23036.008497/2025-69.
+- **Salas seguras.** As análises foram executadas nas salas seguras dos núcleos do Sedap. Os microdados não saem do ambiente: o código roda dentro da sala, e a equipe do Sedap extrai apenas resultados agregados, após analisar o risco de revelação. Só esses agregados alimentam o site.
+- **Sedap+.** A pesquisa também foi habilitada na plataforma Sedap+ (instituída pela [Portaria Inep nº 364/2026](https://www.in.gov.br/web/dou/-/portaria-n-364-de-16-de-julho-de-2026-719888420)), ambiente digital de acesso controlado em que as consultas aos dados protegidos são feitas por API, também com retorno apenas de agregados.
+- **Cadastro Único (MDS).** O acesso a dados identificados do Cadastro Único e do Programa Bolsa Família foi deferido pela SAGICAD/MDS, protocolo 308796.0887845/2024. Essas informações não são publicadas no site.
+- **Censo Demográfico 2022 (IBGE).** A amostra de acesso controlado foi usada sob termo de confidencialidade, e somente estimativas agregadas por área de ponderação chegam ao site.
+:::
+
+Para conhecer o serviço e como solicitar acesso, veja a [página do Sedap no portal gov.br](https://www.gov.br/pt-br/servicos/usar-o-servico-de-acesso-a-dados-protegidos-do-inep).
 
 ## Características das escolas
 
@@ -50,15 +53,24 @@ Cada escola recebe um único tipo, na ordem: Federal, Municipal, vínculo difere
 
 As áreas de ponderação são as menores unidades geográficas com estimativas da amostra do Censo Demográfico 2010. No mapa, cada área pode ser colorida pela renda domiciliar per capita (corrigida pelo INPC para janeiro de 2015), pela densidade demográfica (população por km² da malha do geobr), pela população residente, pela infraestrutura urbana média dos setores e pela participação das escolas de maior prestígio entre as escolas de Ensino Médio da área. As geometrias foram simplificadas para a web e servem para visualização, não para cálculo de áreas. Áreas sem valor na variável escolhida aparecem em cinza; a legenda informa a parcela de áreas com valor. Quando disponível, o painel do mapa permite alternar para o Censo 2022, com estimativas por área de ponderação calculadas a partir da amostra do Censo Demográfico 2022 (renda domiciliar per capita em salários mínimos de agosto de 2022, população e densidade); áreas com menos de 30 domicílios na amostra ficam sem valor.
 
-## Fontes
+## Fontes oficiais
 
-- **Censo Escolar 2015 (Inep)**: cadastro, dependência administrativa, localização, vínculos e infraestrutura.
-- **NSE das escolas**: Alves, Rodrigues e Senkevics (2023). **IIE**: Alcantara (2025). **ICG e AFD**: indicadores do Inep (notas técnicas 040/2014 e 020/2014).
-- **Enem 2015 a 2019, Censo da Educação Superior 2016 a 2020 e Rais 2025**: acompanhamento da coorte, pareado pelo CPF mascarado no Serviço de Acesso a Dados Protegidos (Sedap/Inep).
-- **Censo Demográfico 2010 (IBGE)** e malhas do pacote geobr. **RUF 2015**: Folha de S.Paulo.
-- **Mapas base**: Esri e OpenStreetMap, selecionáveis no painel do mapa.
+| Fonte | Uso no site | Acesso |
+|:--|:--|:--|
+| Censo Escolar 2015 (Inep) | Cadastro das escolas, dependência administrativa, localização, vínculos e infraestrutura | [Microdados do Censo Escolar](https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-escolar) |
+| Enem 2015 a 2019 (Inep) | Participação e nota dos concluintes | [Microdados do Enem](https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/enem) |
+| Censo da Educação Superior 2016 a 2020 (Inep) | Ingresso na educação superior | [Microdados do Censo da Educação Superior](https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior) |
+| Indicadores educacionais (Inep) | Nível socioeconômico das escolas, complexidade de gestão (ICG) e adequação da formação docente (AFD) | [Indicadores Educacionais](https://www.gov.br/inep/pt-br/areas-de-atuacao/pesquisas-estatisticas-e-indicadores/indicadores-educacionais) |
+| Rais 2025 (Ministério do Trabalho e Emprego) | Emprego formal, ocupação e remuneração | [Rais](https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/rais) |
+| Censo Demográfico 2010 (IBGE) | Renda, densidade e população das áreas de ponderação e do entorno das escolas | [Censo 2010](https://www.ibge.gov.br/estatisticas/sociais/populacao/9662-censo-demografico-2010.html) |
+| Censo Demográfico 2022 (IBGE) | Estimativas por área de ponderação, quando disponíveis | [Censo 2022](https://www.ibge.gov.br/estatisticas/sociais/trabalho/22827-censo-demografico-2022.html) |
+| Malhas territoriais | Limites das áreas de ponderação | [geobr](https://ipeagit.github.io/geobr/) e [censobr](https://ipeagit.github.io/censobr/) |
+| Ranking Universitário Folha 2015 | Universidades públicas de maior prestígio | [RUF 2015](https://ruf.folha.uol.com.br/2015/) |
+| Mapas base | Fundo dos mapas | [Esri](https://www.esri.com/) e [OpenStreetMap](https://www.openstreetmap.org/copyright) |
 
-Duas bases alimentam o site. As escolas, o mapa e a tabela usam a base local (`r num_br(meta$n_escolas)` escolas; tipologia `r meta$versao_tipologia`). A página Por tipo usa as tabelas agregadas da `r meta$extracao_sedap`, com `r num_br(meta$n_concluintes_sedap)` concluintes. Como as regras da tipologia foram revisadas depois dessa extração, as contagens por tipo diferem levemente entre as duas.
+Indicadores construídos para a pesquisa: NSE das escolas, de Alves, Rodrigues e Senkevics (2023), e IIE, de Alcantara (2025); as referências completas estão ao fim desta página.
+
+Duas bases alimentam o site. As escolas, o mapa e a tabela usam a base local (`r num_br(meta$n_escolas)` escolas; tipologia `r meta$versao_tipologia`). A aba Descrição usa as tabelas agregadas da `r meta$extracao_sedap`, com `r num_br(meta$n_concluintes_sedap)` concluintes. Como as regras da tipologia foram revisadas depois dessa extração, as contagens por tipo diferem levemente entre as duas.
 
 ## Proteção das informações
 
@@ -75,7 +87,7 @@ A coorte exclui os 19,5% de matrículas sem CPF, e essa perda varia entre os tip
 
 O download da base completa por escola está desativado por ora, pois a tese está em desenvolvimento.
 
-Alcantara, Victor G. *A Escola e a Estratificação: um estudo da associação entre escola de origem e acesso à educação superior no Brasil*. Tese (Doutorado em Sociologia), Programa de Pós-Graduação em Sociologia, Universidade de São Paulo.
+ALCANTARA, Victor Gabriel. *As Escolas e a Estratificação: a associação entre escolas e acesso à Educação Superior no Brasil*. Tese de Doutorado apresentada ao Programa de Pós-Graduação em Sociologia da Universidade de São Paulo. 2026.
 
 ALCANTARA, Victor Gabriel. Indicador de infraestrutura escolar para escolas brasileiras. *Estudos em Avaliação Educacional*, v. 36, e11835, 2025. DOI: [10.18222/eae.v36.11835](https://doi.org/10.18222/eae.v36.11835).
 

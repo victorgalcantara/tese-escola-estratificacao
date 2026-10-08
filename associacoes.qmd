@@ -1,0 +1,14 @@
+---
+title: "Associações"
+subtitle: "Modelagens da relação entre escolas, fatores escolares e acesso à educação superior."
+page-layout: article
+---
+
+::: {.em-desenvolvimento}
+<span class="selo">Em desenvolvimento</span>
+
+Esta aba receberá os resultados das modelagens. Para cada desfecho, ela descreverá a parte da variância atribuída às diferenças entre escolas e a associação com cada fator escolar, mantendo todo o resto constante.
+
+- **Variância entre escolas:** quanto da variação nos desfechos dos egressos se deve ao nível da escola.
+- **Fatores escolares:** associação de cada característica da escola com os resultados, com as demais constantes.
+:::

@@ -1,6 +1,6 @@
-# Escolas do Ensino Médio (site em R e Quarto)
+# Origens & Destinos: As Escolas e a Estratificação (site em R e Quarto)
 
-Site estático para o GitHub Pages que apresenta as escolas brasileiras de Ensino Médio: nome, características, resultados dos egressos da coorte de 2015 e localização. A página inicial reúne busca, filtros, mapa, ficha da escola, comparação e tabela; o texto da tese fica fora do site.
+Site estático para o GitHub Pages que apresenta as escolas brasileiras de Ensino Médio: nome, características, resultados dos egressos da coorte de 2015 e localização. A página inicial apresenta a pesquisa; o texto da tese, o explorador de escolas, a descrição por tipo, os dados e as referências ficam em abas próprias.
 
 ## Estrutura
 
@@ -10,9 +10,13 @@ Site estático para o GitHub Pages que apresenta as escolas brasileiras de Ensin
 | `R/01_preparar_dados.R` | Lê a base da tese e grava os dados compactos em `dados/` |
 | `R/02_gerar_json.R` | Pré-render: gera `dados/escolas_mapa.json` (ficha, busca e comparação) |
 | `R/funcoes_site.R` | Formatação pt-BR, componentes HTML, definições dos tipos, tema dos gráficos |
-| `index.qmd` | Explorador: busca, tipos, filtros, mapa (leaflet), ficha, comparação e tabela (reactable), ligados por crosstalk |
-| `tipos.qmd` | Resultados agregados por tipo (características, ES e Enem, trabalho, salários) |
-| `sobre.qmd` | Definições, fontes, proteção das informações e citação |
+| `index.qmd` | Home: autoria, apresentação, citação e canal de sugestões e críticas |
+| `tese.qmd` | A tese: texto navegável em formato de livro, com índice lateral |
+| `escolas.qmd` | Explorador: busca, tipos, filtros, mapa (leaflet), ficha, comparação e tabela (reactable), ligados por crosstalk |
+| `tipos.qmd` | Descrição: características e resultados por tipo (Enem, acesso, retornos), em tabela ou gráfico |
+| `associacoes.qmd` | Associações: resultados de modelagem (em desenvolvimento) |
+| `sobre.qmd` | Dados: fontes oficiais, protocolos de acesso, definições, proteção das informações e citação |
+| `referencias.qmd` | Referências |
 | `assets/explorador.js` | Mapa base, camadas, ficha, busca, filtros por tipo, área visível e comparação |
 | `docs/` | Site gerado, publicado pelo GitHub Pages |
 
@@ -26,7 +30,7 @@ Mapas base sem chave de API: Esri (claro e satélite) e OpenStreetMap, com troca
 
 ## Como publicar no GitHub Pages
 
-1. Criar o repositório (por exemplo `tipologia-escolas`) e ajustar `site-url` e `repo-url` em `_quarto.yml`.
+1. Criar o repositório (aqui, `tese-escola-estratificacao`) e ajustar `site-url` e `repo-url` em `_quarto.yml`.
 2. Versionar esta pasta, inclusive `docs/` e `dados/*.rds`; o cache `dados/_cache` fica fora (`.gitignore`).
 3. Em Settings > Pages: Deploy from a branch, branch `main`, pasta `/docs`.
 

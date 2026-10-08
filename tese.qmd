@@ -56,6 +56,7 @@ capa <- div(class = "livro-folha folha-capa", `data-cap` = "capa",
 S_INTRO <- "A Escola e o Acesso à Educação Superior"
 S_MOV1 <- "O primeiro movimento: industrialização e modernização"
 S_MOV2 <- "O segundo movimento: distinção social e desigualdades persistentes"
+S_MOV3 <- "O terceiro movimento: efeito de instituições e redução de desigualdades"
 S_DESC <- "Descentralização, diversificação e heterogeneidade institucional"
 S_TRANS <- "Transições sequenciais: da escola à educação superior"
 S_TIPO <- "Uma proposta de tipologia"
@@ -84,21 +85,27 @@ conteudo <- list(
     p("Duas literaturas tratam do tema sem se encontrar. A estratificação educacional mede o efeito da origem social sobre as transições, mas raramente trata a escola como fator explicativo."),
     p("A eficácia escolar mede o efeito da escola, quase sempre sobre o desempenho em avaliações, e não sobre o acesso à educação superior. A tese coloca as duas agendas em diálogo.")),
   P("c1",
-    p("Há duas razões para tomar a transição como objeto: a educação superior como rota para a mobilidade social e como recurso de distinção social. Delas decorrem os dois movimentos teóricos do capítulo seguinte."),
+    p("Há duas razões para tomar a transição como objeto: a educação superior como rota para a mobilidade social e como recurso de distinção social. Delas decorrem os movimentos teóricos do capítulo seguinte."),
     p("Além de um desafio teórico, é um problema social. O Brasil está entre os piores cenários de desigualdade, e sistematizar evidências pode alimentar o debate público e as políticas.")),
 
   # Parte I, Capítulo 2 -------------------------------------------------------------------
   P("c2",
     p("A Revolução Francesa e as reformas educacionais que se seguiram prometeram trocar posições herdadas por posições conquistadas pelo mérito. A pergunta que atravessa a literatura é se expandir os sistemas de ensino basta para romper o vínculo entre origem e destino."),
-    p("As respostas se organizam em dois movimentos teóricos: o otimismo da modernização e o pessimismo das teorias da distinção.")),
+    p("As respostas se organizam em três movimentos teóricos: o otimismo da modernização, o pessimismo das teorias da distinção e, mais recentemente, a atenção ao efeito das instituições.")),
   P("c2", sec = S_MOV1,
     p("Entre as décadas de 1940 e 1960, o estrutural-funcionalismo e a teoria do capital humano sustentaram que a expansão escolar nivelaria as oportunidades. A escola seria a grande niveladora entre origem e destino."),
     p("Com a expansão dos sistemas e a produção de dados, essas hipóteses puderam ser testadas, e foram contestadas.")),
   P("c2", sec = S_MOV2,
-    p("Bourdieu, na França, e o Relatório Coleman, nos Estados Unidos, documentaram a forte correspondência entre origem social e resultados educacionais. Nasceram as teorias da reprodução e o chamado pessimismo pedagógico sobre o efeito das escolas.")),
-  P("c2", sec = S_MOV2, subt = "Transições e desigualdades persistentes",
+    p("Bourdieu, na França, e o Relatório Coleman, nos Estados Unidos, documentaram a forte correspondência entre origem social e resultados educacionais. Nasceram as teorias da reprodução e o chamado pessimismo pedagógico sobre o efeito das escolas."),
     p("Com Mare, a escolarização passou a ser analisada em transições sequenciais. Para explicar a persistência das desigualdades, ganharam força três hipóteses: das Desigualdades Maximamente Mantidas, da Aversão Relativa ao Risco e das Desigualdades Efetivamente Mantidas, que inclui as diferenças dentro de cada nível."),
     p("A tese acrescenta que as instituições, a escola entre elas, também influenciam a decisão de realizar a transição.")),
+  P("c2", sec = S_MOV3,
+    p("Um terceiro movimento, mais recente, desloca o foco da origem social para os arranjos institucionais. Os estudos mostram que o desenho dos sistemas de ensino, das regras de seleção e das políticas de acesso modula o quanto a origem pesa sobre o destino educacional."),
+    p("As desigualdades persistem, mas variam entre contextos e ao longo do tempo. Onde as instituições ampliam a oferta, reduzem barreiras de entrada ou compensam desvantagens de origem, a distância entre as camadas populares e as demais tende a diminuir.")),
+  P("c2", sec = S_MOV3, subt = "Instituições e acesso das camadas populares",
+    p("No Brasil, a expansão da oferta, as ações afirmativas no setor público e os programas de bolsas e de crédito ampliaram o acesso de estudantes de origem popular à educação superior, ainda que sem eliminar as desigualdades entre cursos e instituições."),
+    p("Estudos recentes sobre o efeito de escolas, como o de Prior e Leckie (2023) para a Inglaterra, indicam que políticas e práticas escolares também afetam a candidatura e o ingresso na universidade, mesmo com controles por desempenho e origem."),
+    p("A tese se alinha a esse movimento: trata a escola como instituição que pode ampliar ou restringir o acesso, e não apenas como espelho da origem social.")),
   P("c2", sec = "O caso brasileiro",
     p("No Brasil, a educação superior só se expandiu a partir da segunda metade dos anos 1990. Entre 1995 e 2015, o acesso da população em idade adequada passou de 6,8% para 21,3%, sobretudo pelo setor privado."),
     p("As políticas de inclusão ampliaram o acesso, mas as evidências mostram desigualdades persistentes, inclusive nos cursos e instituições de maior prestígio.")),
@@ -185,10 +192,10 @@ conteudo <- list(
     p("A tese reúne artigos, livros, teses, leis, decretos e fontes de dados. A lista, organizada por gênero e com links de acesso quando disponíveis, está na aba ", a(href = "referencias.qmd", "Referências"), ".")),
   P("ap",
     p("O apêndice documenta a construção do painel de egressos do Ensino Médio que sustenta a Parte II. Reúne o Censo Escolar, o Enem e o Censo da Educação Superior, do Inep, ligados pelo CPF mascarado."),
-    p("Detalha também as perdas de cada etapa da coorte, como as matrículas sem CPF. As fontes estão resumidas em ", a(href = "sobre.qmd", "Sobre os dados"), ".")),
+    p("Detalha também as perdas de cada etapa da coorte, como as matrículas sem CPF. As fontes estão resumidas em ", a(href = "sobre.qmd", "Dados"), ".")),
   P("fim",
     p("Veja onde ficam as escolas de cada tipo e como são seus resultados na aba ", a(href = "escolas.qmd", "Escolas"), "."),
-    p("Para a descrição aprofundada de cada tipo, acesse ", a(href = "tipos.qmd", "Por tipo"), "."))
+    p("Para os resultados descritivos por tipo, acesse ", a(href = "tipos.qmd", "Descrição"), "."))
 )
 
 folha <- function(pg) {
@@ -243,13 +250,13 @@ div(class = "livro-wrap",
         indice,
         div(class = "livro-leitura",
             div(class = "livro-barra",
-                tags$button(type = "button", class = "livro-btn livro-indice-btn", `aria-label` = "Abrir o índice", span(class = "ic", HTML("&#9776;")), span(class = "tx", "Índice")),
+                tags$button(type = "button", class = "livro-btn livro-indice-btn", `aria-label` = "Abrir o índice", `aria-expanded` = "false", title = "Índice", span(class = "ic", HTML("&#9776;"))),
                 tags$button(type = "button", class = "livro-btn livro-ampliar", `aria-label` = "Ampliar para tela inteira", title = "Tela inteira",
                             span(class = "ic", HTML("&#x26F6;")), span(class = "tx", "Ampliar"))),
             div(class = "livro-paginas", paginas),
             tags$button(type = "button", class = "livro-seta livro-ant", `aria-label` = "Página anterior", HTML("&#8249;")),
             tags$button(type = "button", class = "livro-seta livro-prox", `aria-label` = "Próxima página", HTML("&#8250;")),
-            div(class = "livro-rodape", span(class = "livro-num", `aria-live` = "polite")))),
+            div(class = "livro-rodape", tags$button(type = "button", class = "livro-inicio", title = "Voltar ao início da tese", "Início"), span(class = "livro-num", `aria-live` = "polite")))),
     div(class = "livro-baixar",
         tags$button(type = "button", class = "btn-acao btn-tese", disabled = NA,
                     title = "Disponível quando a tese for concluída", "Baixar a tese (PDF)"),
@@ -311,9 +318,21 @@ div(class = "livro-wrap",
     }
   }
   itens.forEach(function (b) {
-    b.addEventListener("click", function () { ir(parseInt(b.getAttribute("data-pagina"), 10) - 1); livro.classList.remove("indice-aberto"); });
+    b.addEventListener("click", function () { ir(parseInt(b.getAttribute("data-pagina"), 10) - 1); indice(false); });
   });
-  livro.querySelector(".livro-indice-btn").addEventListener("click", function () { livro.classList.toggle("indice-aberto"); });
+  var btnInd = livro.querySelector(".livro-indice-btn");
+  function indice(ligar) {
+    livro.classList.toggle("indice-aberto", ligar);
+    btnInd.setAttribute("aria-expanded", String(ligar));
+    btnInd.setAttribute("aria-label", ligar ? "Fechar o índice" : "Abrir o índice");
+    if (ligar) marcarIndice();
+  }
+  btnInd.addEventListener("click", function (ev) { ev.stopPropagation(); indice(!livro.classList.contains("indice-aberto")); });
+  livro.addEventListener("click", function (ev) {
+    if (livro.classList.contains("indice-aberto") && !ev.target.closest(".livro-indice") && !ev.target.closest(".livro-indice-btn")) indice(false);
+  });
+  document.addEventListener("keydown", function (ev) { if (ev.key === "Escape" && livro.classList.contains("indice-aberto")) indice(false); });
+  livro.querySelector(".livro-inicio").addEventListener("click", function () { ir(0); indice(false); });
   ant.addEventListener("click", function () { ir(atual - 1); });
   prox.addEventListener("click", function () { ir(atual + 1); });
   document.addEventListener("keydown", function (ev) {

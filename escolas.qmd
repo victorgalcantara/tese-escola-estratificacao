@@ -346,7 +346,7 @@ div(class = "explorador-pagina",
                       " concluintes; n.d.: sem informação. ",
                       num_br(meta$n_com_coordenadas), " de ", num_br(meta$n_escolas),
                       " escolas têm coordenadas e aparecem no mapa. O tamanho do ponto é proporcional ao número de concluintes. ",
-                      "Definições dos indicadores em Sobre os dados.")
+                      "Definições dos indicadores na aba Dados.")
       )
     )
 )

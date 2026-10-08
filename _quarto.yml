@@ -12,29 +12,29 @@ lang: pt-BR
 website:
   title: "Origens & Destinos"
   description: "Explore as escolas brasileiras de Ensino Médio: tipo, características, resultados dos egressos e localização."
-  site-url: "https://victorgalcantara.github.io/tipologia-escolas"
-  repo-url: "https://github.com/victorgalcantara/tipologia-escolas"
+  site-url: "https://victorgalcantara.github.io/tese-escola-estratificacao"
+  repo-url: "https://github.com/victorgalcantara/tese-escola-estratificacao"
   page-navigation: false
   back-to-top-navigation: true
   navbar:
     background: "#0f1b2d"
     foreground: "#f5f1e8"
     left:
-      - href: index.qmd
-        text: "Home"
       - href: tese.qmd
         text: "A tese"
       - href: escolas.qmd
         text: "Escolas"
       - href: tipos.qmd
-        text: "Por tipo"
+        text: "Descrição"
+      - href: associacoes.qmd
+        text: "Associações"
       - href: sobre.qmd
-        text: "Sobre os dados"
+        text: "Dados"
       - href: referencias.qmd
         text: "Referências"
     right:
       - icon: github
-        href: "https://github.com/victorgalcantara/tipologia-escolas"
+        href: "https://github.com/victorgalcantara/tese-escola-estratificacao"
         aria-label: GitHub
   page-footer:
     left: "Victor G Alcantara · PPGS/USP"
