@@ -1,0 +1,13 @@
+genero,autor,titulo,detalhe,ano,url
+Leis,BRASIL,"Lei nº 4.024, de 20 de dezembro de 1961","Fixa as Diretrizes e Bases da Educação Nacional",1961,https://www.planalto.gov.br/ccivil_03/leis/l4024.htm
+Leis,BRASIL,"Lei nº 5.692, de 11 de agosto de 1971","Fixa Diretrizes e Bases para o ensino de 1º e 2º graus, e dá outras providências",1971,https://www.planalto.gov.br/ccivil_03/leis/l5692.htm
+Leis,BRASIL,"Lei nº 9.394, de 20 de dezembro de 1996","Estabelece as diretrizes e bases da educação nacional",1996,https://www.planalto.gov.br/ccivil_03/leis/l9394.htm
+Leis,BRASIL,"Lei nº 12.061, de 27 de outubro de 2009","Altera a Lei nº 9.394/1996 para assegurar o acesso de todos os interessados ao ensino médio público",2009,https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2009/lei/l12061.htm
+Leis,BRASIL,"Lei nº 13.415, de 16 de fevereiro de 2017","Altera a Lei de Diretrizes e Bases da Educação Nacional e a lei do Fundeb, revoga a Lei nº 11.161/2005 e institui política de fomento ao ensino médio em tempo integral",2017,https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2017/lei/l13415.htm
+Fontes de dados,INEP,"Censo Escolar da Educação Básica","Microdados de 2015. Brasília: Inep",2015,https://www.gov.br/inep/pt-br/areas-de-atuacao/pesquisas-estatisticas-e-indicadores/censo-escolar
+Fontes de dados,INEP,"Exame Nacional do Ensino Médio (Enem)","Microdados de 2015 a 2019, acessados no Serviço de Acesso a Dados Protegidos (Sedap). Brasília: Inep",2019,https://www.gov.br/inep/pt-br/areas-de-atuacao/avaliacao-e-exames-educacionais/enem
+Fontes de dados,INEP,"Censo da Educação Superior","Microdados de 2016 a 2020, acessados no Serviço de Acesso a Dados Protegidos (Sedap). Brasília: Inep",2020,https://www.gov.br/inep/pt-br/areas-de-atuacao/pesquisas-estatisticas-e-indicadores/censo-da-educacao-superior
+Fontes de dados,BRASIL. Ministério do Trabalho e Emprego,"Relação Anual de Informações Sociais (Rais)","Ano-base 2025. Brasília: MTE",2025,https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/rais/rais-2025/apresentacao-rais-2025.pdf
+Fontes de dados,IBGE,"Censo Demográfico 2010","Rio de Janeiro: IBGE",2010,https://www.ibge.gov.br/estatisticas/sociais/populacao/9662-censo-demografico-2010.html
+Fontes de dados,IBGE,"Censo Demográfico 2022","Rio de Janeiro: IBGE",2022,https://www.ibge.gov.br/estatisticas/sociais/trabalho/22827-censo-demografico-2022.html
+Fontes de dados,FOLHA DE S.PAULO,"Ranking Universitário Folha (RUF) 2015","São Paulo: Folha de S.Paulo",2015,https://ruf.folha.uol.com.br/2015/

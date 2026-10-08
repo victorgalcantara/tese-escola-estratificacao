@@ -1,0 +1,326 @@
+---
+title: "Estratificação"
+subtitle: "Os destinos da coorte de concluintes de 2015 segundo o tipo escolar: Enem, educação superior e mercado de trabalho formal em 2025."
+page-layout: article
+---
+
+```{r}
+#| label: setup
+source("R/funcoes_site.R", encoding = "UTF-8")
+
+educacao <- ler_dados("resultados_educacao")
+trabalho <- ler_dados("resultados_trabalho")
+salarios <- ler_dados("resultados_salarios")
+eta2 <- ler_dados("eta2")
+distribuicao <- ler_dados("distribuicao_escolas")
+
+ordenar_c4 <- function(d) {
+  d %>% mutate(ordem = match(tipologia, c("Brasil (dez tipos)", ORDEM_TIPOLOGIA_C4))) %>%
+    arrange(ordem) %>% select(-ordem)
+}
+celula_tipo <- function(v) if (v %in% names(PALETA_TIPOLOGIA)) etiqueta_tipo(v) else v
+linha_brasil <- function(tab) function(i) if (tab$tipologia[i] == "Brasil (dez tipos)") "linha-brasil"
+
+fonte_sedap <- "elaborado pelo autor com base na coorte de concluintes do Ensino Médio de 2015 (Censo Escolar/Inep)"
+```
+
+Os tipos escolares ordenam de forma consistente os destinos dos egressos. As comparações são descritivas: as diferenças entre tipos combinam a seleção social dos estudantes e o que as escolas fazem com eles, e não devem ser lidas como efeito das escolas.
+
+```{r}
+#| label: destaques
+es <- function(tipo, var) educacao[[var]][educacao$tipologia == tipo]
+sal <- function(tipo) salarios$mediana[salarios$tipologia == tipo]
+div(class = "stat-grid",
+    cartao_numero(pct_br(es("Estadual NSE I", "p_es"), 0), "ingresso no ensino superior",
+                  paste0("egressos das Estaduais NSE I, ante ", pct_br(es("Privada NSE V", "p_es"), 0), " nas Privadas NSE V")),
+    cartao_numero(paste0(num_br(es("Privada NSE V", "p_es_top") / es("Estadual NSE I", "p_es_top"), 0), " para 1"),
+                  "razão no acesso às públicas de maior prestígio",
+                  "Privadas NSE V em relação às Estaduais NSE I"),
+    cartao_numero(paste0(num_br(sal("Privada NSE V") / sal("Estadual NSE I"), 1), "x"),
+                  "razão entre salários medianos em 2025",
+                  paste0(reais_br(sal("Privada NSE V")), " ante ", reais_br(sal("Estadual NSE I")))),
+    cartao_numero(pct_br(100 * eta2$eta2[1], 1), "da variância do ingresso no ES",
+                  "associada às diferenças entre os dez tipos (η²)"))
+```
+
+## Enem e educação superior
+
+```{r}
+#| label: grafico-es
+d <- educacao %>% filter(tipologia != "Brasil (dez tipos)") %>%
+  mutate(tipologia = fator_tipos(tipologia))
+
+series <- list(
+  list(var = "p_es", nome = "Ingressou na ES até 2020", cor = "#0f1b2d"),
+  list(var = "p_es_prv", nome = "ES privada", cor = "#9aa5b1"),
+  list(var = "p_es_pub", nome = "ES pública", cor = "#1f63a8"),
+  list(var = "p_es_top", nome = "Públicas de maior prestígio", cor = "#c8553d")
+)
+g <- plot_ly()
+for (s in series) {
+  g <- g %>% add_bars(data = d, y = ~tipologia, x = d[[s$var]], name = s$nome,
+                      orientation = "h", marker = list(color = s$cor),
+                      text = pct_br(d[[s$var]], 1), textposition = "none",
+                      hovertemplate = paste0("%{y}<br>", s$nome, ": %{text}<extra></extra>"))
+}
+g %>% tema_plotly(x_titulo = "% dos concluintes do tipo", legenda_visivel = TRUE,
+                  barmode = "group", bargap = 0.25, height = 560,
+                  xaxis = list(title = "% dos concluintes do tipo", range = c(0, 100),
+                               ticksuffix = "%", gridcolor = "#e6e8eb"),
+                  yaxis = list(title = "", automargin = TRUE),
+                  legend = list(orientation = "h", x = 0, y = 1.07, traceorder = "normal"))
+```
+
+```{r}
+#| label: legenda-fig-es
+legenda(
+  titulo = "Ingresso na educação superior até 2020 segundo o tipo escolar",
+  fonte = paste0(fonte_sedap, ", pareada ao Censo da Educação Superior de 2016 a 2020 no Sedap/Inep (3ª extração)."),
+  nota = "percentuais sobre o total de concluintes de cada tipo. Um mesmo estudante pode ter ingressado nos setores público e privado em anos diferentes. Públicas de maior prestígio: 25 universidades públicas selecionadas a partir do Ranking Universitário Folha (RUF) de 2015."
+)
+```
+
+```{r}
+#| label: tabela-es
+tab <- educacao %>% ordenar_c4() %>%
+  select(tipologia, concluintes, p_enem, nota_enem, p_es, p_es_pub, p_es_top, p_es_prv)
+
+reactable(
+  tab, pagination = FALSE, compact = TRUE, borderless = TRUE, highlight = TRUE, sortable = TRUE,
+  rowClass = linha_brasil(tab),
+  defaultColDef = colDef(align = "right", headerVAlign = "bottom", minWidth = 84),
+  columns = list(
+    tipologia = colDef(name = "Tipo", align = "left", minWidth = 170, cell = celula_tipo),
+    concluintes = colDef(name = "Concluintes", format = fmt_int),
+    p_enem = colDef(name = "Participou do Enem", format = fmt_pct(1)),
+    nota_enem = colDef(name = "Nota média Enem", format = fmt_dec(1)),
+    p_es = colDef(name = "Ingressou na ES até 2020", format = fmt_pct(1), minWidth = 96),
+    p_es_pub = colDef(name = "ES pública", format = fmt_pct(1)),
+    p_es_top = colDef(name = "Públicas de maior prestígio", format = fmt_pct(1), minWidth = 96),
+    p_es_prv = colDef(name = "ES privada", format = fmt_pct(1))
+  )
+)
+```
+
+```{r}
+#| label: legenda-tabela-es
+legenda(
+  titulo = "Resultados dos egressos no Enem e na educação superior, segundo a tipologia, 2015 a 2020",
+  fonte = paste0(fonte_sedap, ", pareada ao Enem de 2015 a 2019 e ao Censo da Educação Superior de 2016 a 2020 no Sedap/Inep."),
+  nota = "percentuais sobre o total de concluintes de cada tipo. Participou do Enem: presente em todas as provas objetivas em ao menos uma edição, excluídos os treineiros. Nota média: média das quatro provas objetivas na edição de 2015 ou, se ausente, na de 2016. Brasil: conjunto dos dez tipos; percentuais ponderados pelos concluintes e nota ponderada pelos participantes."
+)
+```
+
+### A distribuição entre as escolas
+
+As proporções por tipo resumem distribuições heterogêneas. Os gráficos abaixo mostram cada escola com ao menos `r meta$min_concluintes` concluintes; o tipo ordena os destinos, mas não esgota as diferenças entre escolas.
+
+```{r}
+#| label: grafico-box
+caixas <- function(var, titulo_x, faixa = c(0, 100), sufixo = "%") {
+  ordem <- distribuicao %>% group_by(tipologia) %>%
+    summarise(m = median(.data[[var]], na.rm = TRUE)) %>% arrange(m) %>% pull(tipologia)
+  g <- plot_ly()
+  for (tipo in ordem) {
+    dd <- distribuicao %>% filter(tipologia == tipo, !is.na(.data[[var]]))
+    g <- g %>% add_boxplot(x = dd[[var]], y = rep(tipo, nrow(dd)), name = tipo,
+                           orientation = "h", boxpoints = "outliers",
+                           marker = list(color = PALETA_TIPOLOGIA[[tipo]], size = 3, opacity = 0.35),
+                           line = list(color = PALETA_TIPOLOGIA[[tipo]], width = 1.4),
+                           fillcolor = paste0(PALETA_TIPOLOGIA[[tipo]], "55"),
+                           hoverinfo = "x")
+  }
+  g %>% tema_plotly(height = 470,
+                    xaxis = list(title = titulo_x, range = faixa, ticksuffix = sufixo, gridcolor = "#e6e8eb"),
+                    yaxis = list(title = "", categoryorder = "array", categoryarray = ordem, automargin = TRUE))
+}
+
+div(class = "painel",
+    tags$ul(class = "nav nav-pills mb-2", role = "tablist",
+            tags$li(class = "nav-item", tags$a(class = "nav-link active", `data-bs-toggle` = "pill", href = "#box-es", "Ingresso no ES")),
+            tags$li(class = "nav-item", tags$a(class = "nav-link", `data-bs-toggle` = "pill", href = "#box-ruf", "50 primeiras do RUF")),
+            tags$li(class = "nav-item", tags$a(class = "nav-link", `data-bs-toggle` = "pill", href = "#box-enem", "Participação no Enem")),
+            tags$li(class = "nav-item", tags$a(class = "nav-link", `data-bs-toggle` = "pill", href = "#box-nota", "Nota média no Enem"))),
+    div(class = "tab-content",
+        div(class = "tab-pane fade show active", id = "box-es", caixas("p_es", "% dos concluintes da escola")),
+        div(class = "tab-pane fade", id = "box-ruf", caixas("p_ruf50", "% dos concluintes da escola")),
+        div(class = "tab-pane fade", id = "box-enem", caixas("p_enem", "% dos concluintes da escola")),
+        div(class = "tab-pane fade", id = "box-nota", caixas("nota_enem", "Média das quatro provas objetivas", c(350, 750), ""))))
+```
+
+```{r}
+#| label: legenda-box
+legenda(
+  titulo = "Distribuição dos resultados entre as escolas, segundo o tipo escolar",
+  fonte = "elaborado pelo autor com dados do Censo Escolar 2015, do Enem 2015 a 2019, do Censo da Educação Superior 2016 a 2020 (Inep) e do RUF 2015.",
+  nota = paste0("cada escola pesa igualmente; caixa entre os quartis, traço na mediana. Escolas com ao menos ", meta$min_concluintes,
+                " concluintes, coorte local e tipologia ", meta$versao_tipologia,
+                "; por terem a escola como unidade, as medianas não coincidem com os percentuais da tabela, calculados sobre os concluintes no Sedap/Inep. RUF: 50 primeiras posições, públicas e privadas.")
+)
+```
+
+## Mercado de trabalho formal
+
+```{r}
+#| label: grafico-trabalho
+d <- trabalho %>% filter(tipologia != "Brasil (dez tipos)") %>%
+  mutate(tipologia = fator_tipos(tipologia))
+series <- list(
+  list(var = "p_dirigentes", nome = "Dirigentes e profissionais", cor = "#c8553d"),
+  list(var = "p_tecnicos", nome = "Técnicos de nível médio", cor = "#d9a441"),
+  list(var = "p_servicos", nome = "Serviços e administrativos", cor = "#5b8db8"),
+  list(var = "p_industria", nome = "Produção industrial", cor = "#7a8794")
+)
+g <- plot_ly()
+for (s in series) {
+  g <- g %>% add_bars(data = d, y = ~tipologia, x = d[[s$var]], name = s$nome,
+                      orientation = "h", marker = list(color = s$cor),
+                      text = pct_br(d[[s$var]], 1), textposition = "none",
+                      hovertemplate = paste0("%{y}<br>", s$nome, ": %{text}<extra></extra>"))
+}
+g %>% add_markers(data = d, y = ~tipologia, x = ~p_ocupado, name = "Ocupados (total)",
+                  marker = list(symbol = "line-ns", size = 18, color = "#0f1b2d",
+                                line = list(width = 3, color = "#0f1b2d")),
+                  text = pct_br(d$p_ocupado, 1),
+                  hovertemplate = "%{y}<br>Ocupados: %{text}<extra></extra>") %>%
+  tema_plotly(legenda_visivel = TRUE, barmode = "stack", bargap = 0.3, height = 520,
+              xaxis = list(title = "% dos concluintes do tipo", range = c(0, 70),
+                           ticksuffix = "%", gridcolor = "#e6e8eb"),
+              yaxis = list(title = "", automargin = TRUE),
+              legend = list(orientation = "h", x = 0, y = 1.08))
+```
+
+```{r}
+#| label: legenda-fig-trabalho
+legenda(
+  titulo = "Ocupação no emprego formal em 2025 segundo o grande grupo ocupacional e o tipo escolar",
+  fonte = paste0(fonte_sedap, ", pareada à Rais de 2025 no Sedap/Inep."),
+  nota = "percentuais sobre o total de concluintes do tipo. Grandes grupos da CBO 2002 do vínculo selecionado: dirigentes e profissionais das ciências e das artes (1 e 2), técnicos de nível médio (3), serviços e administrativos (4 e 5) e produção industrial e manutenção (7, 8 e 9). O traço marca o total de ocupados; a diferença corresponde a outros grupos."
+)
+```
+
+```{r}
+#| label: tabela-trabalho
+tab <- trabalho %>% ordenar_c4() %>%
+  select(tipologia, p_coorte, p_ocupado, p_dirigentes, p_tecnicos, p_industria, p_servicos)
+reactable(
+  tab, pagination = FALSE, compact = TRUE, borderless = TRUE, highlight = TRUE, sortable = TRUE,
+  rowClass = linha_brasil(tab),
+  defaultColDef = colDef(align = "right", headerVAlign = "bottom", minWidth = 90, format = fmt_pct(1)),
+  columns = list(
+    tipologia = colDef(name = "Tipo", align = "left", minWidth = 170, cell = celula_tipo),
+    p_coorte = colDef(name = "% da coorte"),
+    p_ocupado = colDef(name = "Ocupados"),
+    p_dirigentes = colDef(name = "Dirigentes e profissionais", minWidth = 110),
+    p_tecnicos = colDef(name = "Técnicos"),
+    p_industria = colDef(name = "Indústria"),
+    p_servicos = colDef(name = "Serviços")
+  )
+)
+```
+
+```{r}
+#| label: legenda-tabela-trabalho
+legenda(
+  titulo = "Resultados da coorte no mercado de trabalho dez anos após a conclusão do Ensino Médio",
+  fonte = paste0(fonte_sedap, ", pareada à Rais de 2025 no Sedap/Inep."),
+  nota = "percentuais sobre o total de concluintes de cada tipo. Ocupados: vínculo formal na Rais de 2025. Brasil: conjunto dos dez tipos, ponderado pelos concluintes."
+)
+```
+
+### Remuneração
+
+```{r}
+#| label: grafico-salarios
+d <- salarios %>% filter(tipologia != "Brasil (dez tipos)") %>%
+  arrange(mediana) %>%
+  mutate(tipologia = factor(tipologia, levels = tipologia),
+         cor = unname(PALETA_TIPOLOGIA[as.character(tipologia)]))
+
+plot_ly(d) %>%
+  add_segments(x = ~q90 * 0 + mediana, xend = ~q90, y = ~tipologia, yend = ~tipologia,
+               line = list(color = "#c9ced6", width = 6), name = "Mediana ao percentil 90",
+               hoverinfo = "none") %>%
+  add_markers(x = ~media, y = ~tipologia, name = "Média",
+              marker = list(symbol = "diamond", size = 10, color = "#0f1b2d"),
+              text = reais_br(d$media), hovertemplate = "%{y}<br>Média: %{text}<extra></extra>") %>%
+  add_markers(x = ~mediana, y = ~tipologia, name = "Mediana",
+              marker = list(size = 14, color = ~cor, line = list(color = "white", width = 1.5)),
+              text = reais_br(d$mediana), hovertemplate = "%{y}<br>Mediana: %{text}<extra></extra>") %>%
+  add_markers(x = ~q90, y = ~tipologia, name = "Percentil 90",
+              marker = list(symbol = "line-ns", size = 14, color = "#5b6573", line = list(width = 2, color = "#5b6573")),
+              text = reais_br(d$q90), hovertemplate = "%{y}<br>Percentil 90: %{text}<extra></extra>") %>%
+  tema_plotly(legenda_visivel = TRUE, height = 500,
+              xaxis = list(title = "R$ correntes de 2025", tickprefix = "R$ ", tickformat = ",.0f",
+                           gridcolor = "#e6e8eb"),
+              yaxis = list(title = "", automargin = TRUE),
+              legend = list(orientation = "h", x = 0, y = 1.08))
+```
+
+```{r}
+#| label: legenda-fig-salarios
+legenda(
+  titulo = "Remuneração dos egressos com vínculo formal em 2025, segundo o tipo escolar",
+  fonte = paste0(fonte_sedap, ", pareada à Rais de 2025 no Sedap/Inep."),
+  nota = "última remuneração nominal registrada em 2025 no vínculo selecionado, excluídos os valores nulos, entre os ocupados. Tipos ordenados pela mediana."
+)
+```
+
+```{r}
+#| label: tabela-salarios
+tab <- salarios %>% ordenar_c4() %>% select(tipologia, media, mediana, dp, q90, q95, q99, q999)
+reactable(
+  tab, pagination = FALSE, compact = TRUE, borderless = TRUE, highlight = TRUE, sortable = TRUE,
+  rowClass = linha_brasil(tab),
+  defaultColDef = colDef(align = "right", headerVAlign = "bottom", minWidth = 84,
+                         cell = function(v) num_br(v, 0)),
+  columns = list(
+    tipologia = colDef(name = "Tipo", align = "left", minWidth = 170, cell = celula_tipo),
+    media = colDef(name = "Média"),
+    mediana = colDef(name = "Mediana"),
+    dp = colDef(name = "Desvio-padrão"),
+    q90 = colDef(name = "P90"), q95 = colDef(name = "P95"),
+    q99 = colDef(name = "P99"), q999 = colDef(name = "P99,9")
+  )
+)
+```
+
+```{r}
+#| label: legenda-tabela-salarios
+legenda(
+  titulo = "Remuneração dos egressos com vínculo formal em 2025, segundo a tipologia (R$ correntes)",
+  fonte = paste0(fonte_sedap, ", pareada à Rais de 2025 no Sedap/Inep."),
+  nota = "Brasil: média e desvio-padrão do conjunto dos dez tipos, combinados a partir dos agregados por tipo e ponderados pelo número estimado de ocupados; os percentis do conjunto não podem ser recuperados dos agregados (n.d.). Os valores se referem apenas a quem tem vínculo formal."
+)
+```
+
+## Quanto os tipos separam os estudantes
+
+A parcela da variância individual de cada resultado associada às diferenças entre os tipos (η², o coeficiente de determinação de uma análise de variância de um fator) foi calculada com as contagens, médias e variâncias por tipo exportadas da sala segura.
+
+```{r}
+#| label: eta
+div(class = "eta-grid",
+    lapply(seq_len(nrow(eta2)), function(i) {
+      v <- 100 * eta2$eta2[i]
+      div(class = "eta-card",
+          div(class = "eta-valor", pct_br(v, 1)),
+          div(class = "eta-trilho", div(style = paste0("width:", min(100, v * 4), "%"))),
+          div(class = "eta-rotulo", eta2$desfecho[i]))
+    }))
+```
+
+```{r}
+#| label: legenda-eta
+legenda(
+  fonte = paste0(fonte_sedap, ", pareada ao Censo da Educação Superior de 2016 a 2020 e à Rais de 2025 no Sedap/Inep."),
+  nota = "desfechos binários: variância entre os tipos dividida por p(1 - p) do conjunto, com os concluintes como peso. Salário: variância entre as médias dos tipos dividida pela variância total combinada, entre os ocupados. A barra está em escala de 0 a 25%."
+)
+```
+
+```{=html}
+<script>
+// Os graficos das abas ocultas so tomam a largura certa quando a aba aparece
+document.addEventListener("shown.bs.tab", function () { window.dispatchEvent(new Event("resize")); });
+</script>
+```

@@ -1,0 +1,60 @@
+---
+title: "Referências"
+subtitle: "As obras e fontes citadas na tese, organizadas por gênero."
+page-layout: article
+---
+
+```{r}
+#| label: setup
+source("R/funcoes_site.R", encoding = "UTF-8")
+source("R/referencias.R", encoding = "UTF-8")
+refs <- carregar_referencias("referencias")
+generos <- levels(refs$genero)[table(refs$genero) > 0]
+```
+
+```{r}
+#| label: lista
+indice <- div(class = "refs-indice", `aria-label` = "Gêneros",
+  lapply(generos, function(g) {
+    id <- paste0("g-", gsub("[^a-z]", "", tolower(iconv(g, to = "ASCII//TRANSLIT"))))
+    a(href = paste0("#", id), g, span(class = "refs-n", sum(refs$genero == g)))
+  }))
+
+busca <- div(class = "refs-busca",
+  tags$input(id = "refs-filtro", type = "search", autocomplete = "off",
+             placeholder = "Filtrar referências (autor, título, ano)", `aria-label` = "Filtrar referências"),
+  span(id = "refs-contagem", class = "refs-contagem", paste(nrow(refs), "referências")))
+
+secoes <- lapply(generos, function(g) {
+  id <- paste0("g-", gsub("[^a-z]", "", tolower(iconv(g, to = "ASCII//TRANSLIT"))))
+  itens <- refs$html[refs$genero == g]
+  tags$section(class = "refs-genero", id = id,
+    h2(g, span(class = "refs-n", length(itens))),
+    tags$ul(class = "refs-lista", lapply(itens, function(h) tags$li(HTML(h)))))
+})
+
+tagList(busca, indice, div(class = "refs", secoes))
+```
+
+```{=html}
+<script>
+(function () {
+  var inp = document.getElementById("refs-filtro");
+  if (!inp) return;
+  var itens = Array.prototype.slice.call(document.querySelectorAll(".refs-lista li"));
+  var secs = Array.prototype.slice.call(document.querySelectorAll(".refs-genero"));
+  var cont = document.getElementById("refs-contagem");
+  function norm(s) { return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
+  var textos = itens.map(function (li) { return norm(li.textContent); });
+  inp.addEventListener("input", function () {
+    var t = norm(inp.value).split(/\s+/).filter(Boolean), n = 0;
+    itens.forEach(function (li, i) {
+      var ok = t.every(function (x) { return textos[i].indexOf(x) >= 0; });
+      li.hidden = !ok; if (ok) n++;
+    });
+    secs.forEach(function (s) { s.hidden = !s.querySelector("li:not([hidden])"); });
+    cont.textContent = n + (n === 1 ? " referência" : " referências");
+  });
+})();
+</script>
+```

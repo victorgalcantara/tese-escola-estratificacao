@@ -1,0 +1,50 @@
+---
+title: "As Escolas e a Estratificação"
+subtitle: "Resultados de uma pesquisa de doutorado em Sociologia na Universidade de São Paulo."
+page-layout: full
+---
+
+```{r}
+#| label: autoria
+#| echo: false
+#| results: asis
+# Preencha aqui. Sem link, o botao aparece desativado; sem nome, a pessoa e omitida.
+AUTOR <- "Victor G Alcantara"
+ORIENTADOR <- NA_character_
+COORIENTADOR <- "Adriano Souza Senkevics"
+LINK_LATTES <- NA_character_      # ex.: "http://lattes.cnpq.br/0000000000000000"
+LINK_ORCID <- NA_character_       # ex.: "https://orcid.org/0000-0000-0000-0000"
+
+botao_id <- function(url, rotulo, classe, sigla) {
+  ico <- sprintf('<span class="ico %s" aria-hidden="true">%s</span>', classe, sigla)
+  if (is.na(url) || !nzchar(url)) {
+    sprintf('<span class="btn-id desativado" aria-disabled="true" title="Link a ser informado">%s%s</span>', ico, rotulo)
+  } else {
+    sprintf('<a class="btn-id" href="%s" target="_blank" rel="noopener" title="%s de %s">%s%s</a>', url, rotulo, AUTOR, ico, rotulo)
+  }
+}
+pessoa <- function(papel, nome, extra = "") {
+  if (is.na(nome) || !nzchar(nome)) return(NULL)
+  sprintf('<span class="pessoa"><span class="papel">%s</span><span class="nome">%s</span>%s</span>', papel, nome, extra)
+}
+itens <- Filter(Negate(is.null), list(
+  pessoa("Autor", AUTOR, paste0(botao_id(LINK_LATTES, "Lattes", "lattes", "L"), botao_id(LINK_ORCID, "ORCID", "orcid", "iD"))),
+  pessoa("Orientador", ORIENTADOR),
+  pessoa("Coorientador", COORIENTADOR)))
+cat('<div class="home-autoria">', paste(unlist(itens), collapse = '<span class="sep" aria-hidden="true">|</span>'), '</div>\n', sep = "")
+```
+
+```{=html}
+<div class="home-texto">
+  <p class="home-lead">Quem estuda onde, e o que vem depois? Esta página reúne os resultados da pesquisa “As Escolas e a Estratificação”, que analisa a relação entre as escolas e a estratificação social: da origem dos estudantes ao acesso à educação superior.</p>
+  <p>Desenvolvida ao longo de cinco anos de doutorado, a pesquisa é divulgada aqui para tornar mais transparentes os procedimentos e os resultados. A ideia é deixá-los disponíveis para que outras pessoas possam utilizá-los e desenvolvê-los.</p>
+</div>
+
+<nav class="home-cards" aria-label="Seções do site">
+  <a class="home-card" href="tese.html"><span class="home-card-n">A tese</span><span class="home-card-t">Leitura em livro</span><span class="home-card-d">O problema, a abordagem, os avanços e os resultados da pesquisa, em forma de narrativa.</span></a>
+  <a class="home-card" href="escolas.html"><span class="home-card-n">Escolas</span><span class="home-card-t">Mapa e tabela</span><span class="home-card-d">As escolas de Ensino Médio do país, suas características e os destinos de seus egressos.</span></a>
+  <a class="home-card" href="tipos.html"><span class="home-card-n">Por tipo</span><span class="home-card-t">A tipologia escolar</span><span class="home-card-d">Uma descrição aprofundada de cada tipo proposto, com os elementos explorados na pesquisa.</span></a>
+  <a class="home-card" href="sobre.html"><span class="home-card-n">Sobre os dados</span><span class="home-card-t">Fontes e definições</span><span class="home-card-d">Os dados utilizados, as definições dos indicadores e os cuidados na divulgação.</span></a>
+  <a class="home-card" href="referencias.html"><span class="home-card-n">Referências</span><span class="home-card-t">Obras e fontes</span><span class="home-card-d">As referências da tese, organizadas por gênero e com links de acesso.</span></a>
+</nav>
+```

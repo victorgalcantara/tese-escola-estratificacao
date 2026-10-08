@@ -1,0 +1,353 @@
+---
+title: "Estratificação Social das Escolas"
+subtitle: "Escolas brasileiras que ofertam o Ensino Médio."
+page-layout: full
+---
+
+```{r}
+#| label: setup
+source("R/funcoes_site.R", encoding = "UTF-8")
+
+escolas <- ler_dados("escolas") %>%
+  mutate(tipologia = as.character(tipologia),
+         id = sprintf("%.0f", id))   # ids como texto: chaves do crosstalk e do JSON
+
+ordem_legenda <- ORDEM_LEGENDA_MAPA
+definicoes <- definicoes_tipo()
+```
+
+```{r}
+#| label: shared-data
+# Tabela: todas as escolas; mapa: apenas as georreferenciadas. As duas
+# compartilham o grupo "escolas", e os filtros valem para ambas.
+colunas_tabela <- c("id", "nome", "municipio", "uf", "regiao", "tipologia", "rede", "dep_adm",
+                    "localizacao", "vinculo_dif", "localizacao_dif", "estrato_nse",
+                    "concluintes", "nse", "icg", "afd", "iie", "laboratorio", "renda_entorno",
+                    "p_ppi", "p_enem", "nota_enem", "p_es", "p_es_pub", "p_es_top", "p_ruf50",
+                    "suprimida")
+
+sd_tabela <- SharedData$new(escolas[, colunas_tabela], key = ~id, group = "escolas")
+
+escolas_mapa <- escolas %>%
+  filter(!is.na(lat), !is.na(lon)) %>%
+  mutate(raio = round(pmin(2.5 + sqrt(concluintes) / 3.2, 10), 1),
+         cor = unname(PALETA_TIPOLOGIA[tipologia]))
+
+sd_mapa <- SharedData$new(escolas_mapa %>% select(id, lat, lon, raio, cor),
+                          key = ~id, group = "escolas")
+```
+
+<p class="descricao-pagina">Essa página apresenta os dados analisados na tese de doutorado "A Escola e a Estratificação", que analisa a relação entre a origem social dos estudantes, a escola onde finalizam a escolarização básica e os resultados em acesso à Educação Superior. A iniciativa busca contribuir na compreensão da distribuição das oportunidades no Brasil.</p>
+
+```{r}
+#| label: busca
+div(class = "topo-explorador",
+    div(class = "busca-escola",
+        tags$input(id = "busca-escola", type = "search", autocomplete = "off",
+                   placeholder = "Buscar escola ou município (ex.: Colégio Pedro II, Campinas)",
+                   `aria-label` = "Buscar escola"),
+        tags$ul(id = "sugestoes-escola", role = "listbox")))
+```
+
+```{r}
+#| label: filtros
+# Barra de filtros acima do mapa, em quatro linhas:
+#   1. Territorio (listas, "Geral" = sem filtro)   2. Criterios da classificacao (listas)
+#   3. Indicadores e resultados (faixas, sem filtro inicial)   4. Botoes por tipo escolar
+# As listas sao preenchidas pelo explorador.js a partir do JSON das escolas e filtram
+# o grupo "escolas" do crosstalk (mapa e tabela). As faixas usam controles do crosstalk.
+contagem_tipo <- table(escolas$tipologia)
+tipos_botao <- c(ORDEM_TIPOLOGIA_C4, "Municipal")
+
+botoes_tipo <- lapply(tipos_botao, function(t) {
+  tags$button(
+    type = "button", class = "chip-tipo", `data-tipo` = t, `aria-pressed` = "false",
+    title = paste0(definicoes[[t]], " (", num_br(as.integer(contagem_tipo[[t]])), " escolas)"), style = paste0("--tipo:", PALETA_TIPOLOGIA[[t]]),
+    span(class = "tipo-dot"), sub("^Estadual ", "Est. ", sub("^Privada ", "Prv. ", t)), span(class = "chip-n", num_br(as.integer(contagem_tipo[[t]]))))
+})
+
+campo <- function(id, rotulo) {
+  tags$label(class = "fb-campo", span(rotulo),
+             tags$select(id = paste0("fb-", id), `data-campo` = id,
+                         tags$option(value = "", "Geral")))
+}
+
+filtros <- div(
+  class = "filtros",
+  tags$button(type = "button", class = "fb-toggle", "Filtros"),
+  div(class = "fb-linha fb-linha-selects",
+      span(class = "fb-titulo", "Território"),
+      campo("reg", "Região"), campo("uf", "UF"), campo("mun", "Município"), campo("loc", "Localização"),
+      tags$button(id = "btn-limpar", type = "button", class = "btn-mini fb-limpar", "Limpar filtros")),
+  div(class = "fb-linha fb-linha-selects",
+      span(class = "fb-titulo", "Critérios"),
+      campo("rede", "Rede"), campo("dep", "Dep. Adm."), campo("vinc", "Vínculo diferenciado"),
+      campo("locdif", "Localização diferenciada"), campo("estrato", "NSE")),
+  div(class = "fb-linha fb-linha-faixas",
+      span(class = "fb-titulo", "Indicadores e resultados",
+           span(class = "fb-dica", title = "Ao mover uma faixa, escolas sem o dado deixam de aparecer.", "ⓘ")),
+      div(class = "fb-faixas",
+          filter_slider("f_concl", "Concluintes", sd_tabela, ~concluintes, ticks = FALSE, width = "100%"),
+          filter_slider("f_nse_valor", "NSE da escola", sd_tabela, ~nse, step = 0.1, ticks = FALSE, width = "100%"),
+          filter_slider("f_enem", "Participação no Enem (%)", sd_tabela, ~p_enem, step = 1, ticks = FALSE, width = "100%"),
+          filter_slider("f_es", "Ingresso na ES (%)", sd_tabela, ~p_es, step = 1, ticks = FALSE, width = "100%"))),
+  div(class = "fb-linha fb-linha-tipos",
+      div(class = "chips-tipos", `aria-label` = "Filtrar por tipo escolar", botoes_tipo))
+)
+```
+
+```{r}
+#| label: mapa
+roxos <- c("#e4ddef", "#c7b9e0", "#a996cf", "#8b74bd", "#6c53a8", "#4b2f8c")
+
+# Variaveis das areas de ponderacao: os valores estao no GeoJSON, com o id da
+# variavel como nome da propriedade (ver R/01_preparar_dados.R)
+variavel_ap <- function(id, rotulo, cortes, rotulos, fonte, sem = "sem informação") {
+  list(id = id, rotulo = rotulo, cortes = cortes,
+       cores = roxos[seq_len(length(cortes) + 1)], rotulos = rotulos, fonte = fonte, sem = sem)
+}
+fonte_censo <- "IBGE, Censo Demográfico 2010 (agregados por setor)."
+
+vars_ap <- list(
+  variavel_ap("renda", "Renda domiciliar per capita (SM de 2015)", c(0.5, 1, 1.5, 2, 3),
+              c("até 0,5", "0,5 a 1", "1 a 1,5", "1,5 a 2", "2 a 3", "mais de 3"),
+              paste(fonte_censo, "Renda de 2010 corrigida pelo INPC para jan/2015; SM = R$ 788.")),
+  variavel_ap("densidade", "Densidade demográfica (hab./km²)", c(10, 100, 1000, 5000, 10000),
+              c("até 10", "10 a 100", "100 a 1.000", "1.000 a 5.000", "5.000 a 10.000", "mais de 10.000"),
+              paste(fonte_censo, "Área calculada na malha do geobr (EPSG 5880).")),
+  variavel_ap("populacao", "População residente (mil hab.)", c(10, 15, 20, 30, 50),
+              c("até 10", "10 a 15", "15 a 20", "20 a 30", "30 a 50", "mais de 50"),
+              fonte_censo),
+  variavel_ap("infra", "Infraestrutura urbana do entorno (0 a 100)", c(20, 40, 60, 80),
+              c("até 20", "20 a 40", "40 a 60", "60 a 80", "mais de 80"),
+              paste(fonte_censo, "Média dos setores da área de ponderação.")),
+  variavel_ap("topo", "Escolas Federais, Estaduais NSE III e Privadas NSE IV e V (%)", c(0, 10, 25, 50, 75),
+              c("nenhuma", "até 10%", "10% a 25%", "25% a 50%", "50% a 75%", "mais de 75%"),
+              "Censo Escolar 2015 (Inep); escolas georreferenciadas dos dez tipos.",
+              sem = "área sem escolas de Ensino Médio")
+)
+if (isTRUE(meta$tem_raca_ap)) {
+  vars_ap <- c(vars_ap, list(
+    variavel_ap("ppi", "Pretos, pardos e indígenas na população (%)", c(20, 40, 60, 80),
+                c("até 20%", "20% a 40%", "40% a 60%", "60% a 80%", "mais de 80%"), fonte_censo)))
+}
+
+# Variaveis alternativas para colorir os pontos (campo = coluna do JSON das escolas)
+cortes_nse <- meta$cortes_nse$corte
+viridis5 <- c("#fde725", "#5ec962", "#21918c", "#3b528b", "#440154")
+vars_escolas <- list(
+  list(id = "nse", campo = "nse", rotulo = "NSE da escola (cortes da classificação)",
+       cortes = cortes_nse, cores = c("#2c7bb6", "#abd9e9", "#ffffbf", "#fdae61", "#d7191c"),
+       rotulos = c(paste("até", num_br(cortes_nse[1], 2)),
+                   paste(num_br(head(cortes_nse, -1), 2), "a", num_br(cortes_nse[-1], 2)),
+                   paste("mais de", num_br(cortes_nse[4], 2)))),
+  list(id = "p_es", campo = "es", rotulo = "Ingresso no ensino superior até 2020 (%)",
+       cortes = c(20, 40, 60, 80), cores = viridis5,
+       rotulos = c("até 20%", "20% a 40%", "40% a 60%", "60% a 80%", "mais de 80%")),
+  list(id = "p_es_pub", campo = "espub", rotulo = "Ingresso na ES pública (%)",
+       cortes = c(5, 10, 20, 40), cores = viridis5,
+       rotulos = c("até 5%", "5% a 10%", "10% a 20%", "20% a 40%", "mais de 40%")),
+  list(id = "renda_entorno", campo = "renda", rotulo = "Renda do entorno da escola (SM)",
+       cortes = c(0.5, 1, 2, 3), cores = viridis5,
+       rotulos = c("até 0,5", "0,5 a 1", "1 a 2", "2 a 3", "mais de 3"))
+)
+
+# Censo 2022: so aparece se R/03_areas_2022.R gerou o arquivo (estimativas agregadas por AP)
+tem_ap_2022 <- file.exists("dados/areas_ponderacao_2022.geojson")
+fonte_2022 <- "IBGE, Censo Demográfico 2022, amostra (microdados de acesso controlado; estimativas por área de ponderação)."
+vars_ap_2022 <- NULL
+if (tem_ap_2022) {
+  vars_ap_2022 <- lapply(Filter(function(v) v$id %in% c("renda", "densidade", "populacao", "topo"), vars_ap), function(v) {
+    if (v$id == "renda") {
+      v$rotulo <- "Renda domiciliar per capita (SM de 2022)"
+      v$fonte <- paste(fonte_2022, "SM = R$ 1.212 (agosto de 2022).")
+    } else if (v$id == "densidade") {
+      v$fonte <- paste(fonte_2022, "Área calculada na malha de áreas de ponderação de 2022.")
+    } else if (v$id == "populacao") {
+      v$fonte <- fonte_2022
+    } else {
+      v$fonte <- "Censo Escolar 2015 (Inep); escolas dos dez tipos localizadas nas áreas de 2022."
+    }
+    v
+  })
+}
+
+dados_js <- list(
+  grupo_escolas = "Escolas", grupo_cross = "escolas",
+  url_escolas = "dados/escolas_mapa.json", id_tabela = "tabela-escolas",
+  min_concluintes = meta$min_concluintes,
+  tipos = list(ordem = ordem_legenda, paleta = as.list(PALETA_TIPOLOGIA)),
+  ap = list(url = "dados/areas_ponderacao.geojson", inicial = "renda", variaveis = vars_ap),
+  ap22 = if (tem_ap_2022) list(url = "dados/areas_ponderacao_2022.geojson", inicial = "renda",
+                               variaveis = vars_ap_2022) else NULL,
+  variaveis_escolas = vars_escolas
+)
+
+js_controles <- paste(readLines("assets/explorador.js", encoding = "UTF-8"), collapse = "\n")
+
+# O mapa base (Esri / OpenStreetMap, sem chave de API) e adicionado pelo JS
+mapa <- leaflet(sd_mapa, height = 680,
+                options = leafletOptions(preferCanvas = TRUE, minZoom = 3, maxZoom = 18, zoomSnap = 0.5)) %>%
+  addCircleMarkers(lng = ~lon, lat = ~lat, layerId = ~id, group = "Escolas",
+                   radius = ~raio, fillColor = ~cor, fillOpacity = 0.85,
+                   color = "#ffffff", weight = 0.6, opacity = 0.9) %>%
+  addScaleBar(position = "bottomleft", options = scaleBarOptions(imperial = FALSE)) %>%
+  fitBounds(-73.9, -33.9, -34.7, 5.4) %>%
+  htmlwidgets::onRender(js_controles, data = dados_js)
+```
+
+```{r}
+#| label: tabela
+# Celulas renderizadas em JavaScript para manter a pagina leve (26 mil linhas)
+js_barra <- JS("function(cell) {
+  if (cell.value === null || cell.value === undefined) {
+    return cell.row.suprimida ? '<span class=\"suprimido\" title=\"Menos de 10 concluintes\">supr.</span>' : '<span class=\"suprimido\">n.d.</span>';
+  }
+  var v = cell.value;
+  var txt = v.toLocaleString('pt-BR', {minimumFractionDigits: 1, maximumFractionDigits: 1}) + '%';
+  return '<div class=\"celula-barra\"><div class=\"trilho\"><div class=\"preenchido\" style=\"width:' +
+    Math.min(v, 100) + '%\"></div></div><span class=\"valor\">' + txt + '</span></div>';
+}")
+
+js_pct <- JS("function(cell) {
+  if (cell.value === null || cell.value === undefined) {
+    return cell.row.suprimida ? '<span class=\"suprimido\" title=\"Menos de 10 concluintes\">supr.</span>' : '<span class=\"suprimido\">n.d.</span>';
+  }
+  return cell.value.toLocaleString('pt-BR', {minimumFractionDigits: 1, maximumFractionDigits: 1}) + '%';
+}")
+
+js_pct_ind <- JS("function(cell) {
+  if (cell.value === null || cell.value === undefined) return '<span class=\"suprimido\">n.d.</span>';
+  return cell.value.toLocaleString('pt-BR', {minimumFractionDigits: 1, maximumFractionDigits: 1}) + '%';
+}")
+
+js_num <- function(d, resultado = FALSE) JS(sprintf("function(cell) {
+  if (cell.value === null || cell.value === undefined) {
+    return (%s && cell.row.suprimida) ? '<span class=\"suprimido\">supr.</span>' : '<span class=\"suprimido\">n.d.</span>';
+  }
+  return cell.value.toLocaleString('pt-BR', {minimumFractionDigits: %d, maximumFractionDigits: %d});
+}", if (resultado) "true" else "false", d, d))
+
+paleta_js <- jsonlite::toJSON(as.list(PALETA_TIPOLOGIA), auto_unbox = TRUE)
+js_tipo <- JS(sprintf("function(cell) {
+  var p = %s; var c = p[cell.value] || '#999';
+  return '<span class=\"tipo-pill\" style=\"--tipo:' + c + '\"><span class=\"tipo-dot\"></span>' + cell.value + '</span>';
+}", paleta_js))
+
+js_nome <- JS("function(cell) {
+  var r = cell.row;
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  return '<div class=\"nome-escola\">' + esc(cell.value) + '</div><div class=\"local-escola\">' +
+    esc(r.municipio) + (r.uf ? ' (' + esc(r.uf) + ')' : '') + ' · ' + esc(r.dep_adm) + ' · ' + esc(r.localizacao) + '</div>';
+}")
+
+js_comparar <- JS("function() {
+  return '<span class=\"btn-linha\" role=\"button\" title=\"Adicionar à comparação\">+</span>';
+}")
+
+js_clique <- JS("function(rowInfo, column) {
+  if (!rowInfo || !window.Escolas) return;
+  var id = String(rowInfo.row.id);
+  if (column.id === 'id') window.Escolas.comparar(id);
+  else window.Escolas.abrir(id, {voar: true});
+}")
+
+js_linha <- JS("function(rowInfo, state) {
+  if (rowInfo && state.meta && state.meta.atual && String(rowInfo.row.id) === state.meta.atual) {
+    return {background: '#f6efe3', boxShadow: 'inset 3px 0 0 #c8553d'};
+  }
+}")
+
+oculta <- colDef(show = FALSE)
+
+tabela <- reactable(
+  sd_tabela,
+  elementId = "tabela-escolas",
+  searchable = TRUE, highlight = TRUE, compact = TRUE, striped = FALSE,
+  borderless = TRUE, resizable = TRUE,
+  onClick = js_clique, rowStyle = js_linha, meta = list(atual = ""),
+  defaultPageSize = 15, showPageSizeOptions = TRUE, pageSizeOptions = c(15, 30, 60, 100),
+  paginationType = "jump", showPageInfo = TRUE,
+  defaultSorted = list(concluintes = "desc"),
+  language = reactableLang(
+    searchPlaceholder = "Filtrar a lista por nome, município, UF...",
+    noData = "Nenhuma escola com esses filtros",
+    pageInfo = "{rowStart} a {rowEnd} de {rows} escolas",
+    pagePrevious = "‹ anterior", pageNext = "próxima ›",
+    pageSizeOptions = "Mostrar {rows}", pageJumpLabel = "Ir para a página",
+    pageNumbers = "{page} de {pages}"
+  ),
+  theme = reactableTheme(
+    headerStyle = list(fontSize = "0.78rem"),
+    searchInputStyle = list(width = "100%", borderRadius = "999px", padding = "0.45rem 1rem")
+  ),
+  defaultColDef = colDef(headerVAlign = "bottom", align = "right", minWidth = 78, html = TRUE),
+  columnGroups = list(
+    colGroup("Características da escola",
+             c("concluintes", "nse", "icg", "afd", "iie", "laboratorio", "renda_entorno", "p_ppi")),
+    colGroup("Resultados dos egressos da coorte de 2015",
+             c("p_enem", "nota_enem", "p_es", "p_es_pub", "p_es_top", "p_ruf50"))
+  ),
+  columns = list(
+    id = colDef(name = "", width = 40, minWidth = 40, sortable = FALSE, resizable = FALSE,
+                align = "center", sticky = "left", cell = js_comparar),
+    nome = colDef(name = "Escola", align = "left", minWidth = 250, sticky = "left", cell = js_nome),
+    municipio = oculta, uf = oculta, regiao = oculta, rede = oculta, dep_adm = oculta,
+    localizacao = oculta, vinculo_dif = oculta, localizacao_dif = oculta, estrato_nse = oculta,
+    suprimida = oculta,
+    tipologia = colDef(name = "Tipo", align = "left", minWidth = 150, cell = js_tipo),
+    concluintes = colDef(name = "Concluintes", cell = js_num(0), minWidth = 118),
+    nse = colDef(name = "NSE", cell = js_num(1), minWidth = 60),
+    icg = colDef(name = "ICG (nível)", cell = js_num(0), minWidth = 64),
+    afd = colDef(name = "AFD adequada", cell = js_pct_ind),
+    iie = colDef(name = "IIE (0 a 100)", cell = js_num(1)),
+    laboratorio = colDef(name = "Lab. ciências", align = "center", html = FALSE),
+    renda_entorno = colDef(name = "Renda do entorno (SM)", cell = js_num(2), minWidth = 90),
+    p_ppi = colDef(name = "PPI", cell = js_pct_ind, minWidth = 66),
+    p_enem = colDef(name = "Participou do Enem", cell = js_pct, minWidth = 88),
+    nota_enem = colDef(name = "Nota média Enem", cell = js_num(1, resultado = TRUE), minWidth = 80),
+    p_es = colDef(name = "Ingressou na ES", cell = js_barra, minWidth = 140),
+    p_es_pub = colDef(name = "ES pública", cell = js_pct),
+    p_es_top = colDef(name = "Públicas de maior prestígio", cell = js_pct, minWidth = 96),
+    p_ruf50 = colDef(name = "50 primeiras do RUF", cell = js_pct, minWidth = 88)
+  )
+)
+```
+
+```{r}
+#| label: layout
+div(class = "explorador-pagina",
+  filtros,
+  div(
+    class = "conteudo-explorador",
+      div(class = "barra-mapa",
+          span(id = "status-escolas", class = "status", "Carregando escolas..."),
+          tags$label(class = "chk-barra",
+                     tags$input(type = "checkbox", id = "chk-ajustar", checked = NA), "Ajustar o mapa aos filtros"),
+          tags$label(class = "chk-barra", title = "A tabela passa a listar só as escolas visíveis no mapa (escolas sem coordenadas ficam de fora)",
+                     tags$input(type = "checkbox", id = "chk-area"), "Tabela só com a área visível"),
+          tags$button(id = "btn-enquadrar", type = "button", class = "btn-mini", "Enquadrar filtradas")),
+      div(class = "mapa-wrap", mapa, div(id = "aviso-explorador", class = "aviso-explorador", role = "status")),
+      tags$details(id = "comparador", class = "comparador",
+                   tags$summary(class = "comp-resumo", "Comparar escolas"),
+                   div(class = "comp-corpo")),
+      div(class = "barra-acoes",
+          span(class = "contagem", "Lista de escolas"),
+          tags$button(class = "btn-acao", type = "button", disabled = NA,
+                      title = "Indisponível por ora: a tese está em desenvolvimento",
+                      "Baixar lista filtrada (CSV)"),
+          tags$button(class = "btn-acao", type = "button", disabled = NA,
+                      title = "Indisponível por ora: a tese está em desenvolvimento",
+                      "Baixar base completa (CSV)")),
+      tabela,
+      legenda(
+        fonte = paste0("Censo Escolar 2015, Enem 2015 a 2019 e Censo da Educação Superior 2016 a 2020 (Inep); RUF 2015; Censo Demográfico 2010", if (tem_ap_2022) " e 2022" else "", " (IBGE)."),
+        nota = paste0("Resultados dos concluintes de 2015 de cada escola. supr.: menos de ", meta$min_concluintes,
+                      " concluintes; n.d.: sem informação. ",
+                      num_br(meta$n_com_coordenadas), " de ", num_br(meta$n_escolas),
+                      " escolas têm coordenadas e aparecem no mapa. O tamanho do ponto é proporcional ao número de concluintes. ",
+                      "Definições dos indicadores em Sobre os dados.")
+      )
+    )
+)
+```

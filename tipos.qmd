@@ -1,0 +1,249 @@
+---
+title: "Resultados por tipo de escola"
+subtitle: "Características das escolas e destinos dos egressos da coorte de concluintes de 2015, segundo o tipo escolar."
+page-layout: article
+---
+
+```{r}
+#| label: setup
+source("R/funcoes_site.R", encoding = "UTF-8")
+
+indicadores <- ler_dados("indicadores_tipo")
+educacao <- ler_dados("resultados_educacao")
+trabalho <- ler_dados("resultados_trabalho")
+salarios <- ler_dados("resultados_salarios")
+
+ordenar_c4 <- function(d) {
+  d %>% mutate(ordem = match(tipologia, c("Brasil (dez tipos)", ORDEM_TIPOLOGIA_C4))) %>%
+    arrange(ordem) %>% select(-ordem)
+}
+celula_tipo <- function(v) if (v %in% names(PALETA_TIPOLOGIA)) etiqueta_tipo(v) else v
+linha_brasil <- function(tab) function(i) if (tab$tipologia[i] == "Brasil (dez tipos)") "linha-brasil"
+
+fonte_sedap <- "Censo Escolar 2015 (Inep), pareado a Enem, Censo da Educação Superior e Rais no Sedap/Inep"
+definicoes <- definicoes_tipo()
+```
+
+Comparações descritivas: as diferenças entre tipos combinam a seleção social dos estudantes e o que as escolas fazem com eles. Para ver as escolas de cada tipo, use o [explorador](escolas.qmd).
+
+## Os tipos
+
+```{r}
+#| label: lista-tipos
+div(class = "lista-tipos",
+    lapply(ORDEM_TIPOLOGIA_C4, function(t) {
+      div(class = "item-tipo", etiqueta_tipo(t), span(definicoes[[t]]))
+    }))
+```
+
+## Características das escolas
+
+```{r}
+#| label: tabela-indicadores
+tab <- indicadores %>%
+  mutate(ordem = match(tipologia, c("Brasil (dez tipos)", ORDEM_TIPOLOGIA_C4))) %>%
+  arrange(ordem) %>%
+  select(tipologia, escolas, concluintes, nse, p_ppi, p_icg_5_6, afd, iie, p_laboratorio,
+         renda_entorno, p_rural)
+
+reactable(
+  tab, pagination = FALSE,
+  sortable = TRUE, highlight = TRUE, compact = TRUE, borderless = TRUE,
+  defaultColDef = colDef(headerVAlign = "bottom", align = "right", minWidth = 82),
+  rowClass = function(i) if (tab$tipologia[i] == "Brasil (dez tipos)") "linha-brasil",
+  columns = list(
+    tipologia = colDef(name = "Tipo", align = "left", minWidth = 170, cell = celula_tipo),
+    escolas = colDef(name = "Escolas", format = fmt_int),
+    concluintes = colDef(name = "Concluintes", format = fmt_int, minWidth = 100),
+    nse = colDef(name = "NSE", format = fmt_dec(1)),
+    p_ppi = colDef(name = "PPI", format = fmt_pct(0)),
+    p_icg_5_6 = colDef(name = "ICG 5 e 6", format = fmt_pct(0)),
+    afd = colDef(name = "AFD adequada", format = fmt_pct(0)),
+    iie = colDef(name = "IIE (0 a 100)", format = fmt_dec(1)),
+    p_laboratorio = colDef(name = "Lab. ciências", format = fmt_pct(0)),
+    renda_entorno = colDef(name = "Renda do entorno (SM)", format = fmt_dec(2), minWidth = 100),
+    p_rural = colDef(name = "Rurais", format = fmt_pct(0))
+  )
+)
+```
+
+```{r}
+#| label: legenda-indicadores
+legenda(
+  fonte = "Censo Escolar 2015 e indicadores do Inep (ICG e AFD); NSE (Alves, Rodrigues e Senkevics, 2023); IIE (Alcantara, 2025); Censo Demográfico 2010 (IBGE).",
+  nota = "médias ou percentuais entre as escolas, sem ponderação; PPI entre os concluintes com cor ou raça declarada; ICG 5 e 6: percentual de escolas nesses níveis de complexidade de gestão; renda do entorno: mediana entre as escolas, em salários mínimos de 2015. Base local de escolas; ver Sobre os dados."
+)
+```
+
+## Educação superior e Enem
+
+```{r}
+#| label: grafico-es
+d <- educacao %>% filter(tipologia != "Brasil (dez tipos)") %>%
+  mutate(tipologia = fator_tipos(tipologia))
+
+series <- list(
+  list(var = "p_es", nome = "Ingressou na ES até 2020", cor = "#0f1b2d"),
+  list(var = "p_es_prv", nome = "ES privada", cor = "#9aa5b1"),
+  list(var = "p_es_pub", nome = "ES pública", cor = "#1f63a8"),
+  list(var = "p_es_top", nome = "Públicas de maior prestígio", cor = "#c8553d")
+)
+g <- plot_ly()
+for (s in series) {
+  g <- g %>% add_bars(data = d, y = ~tipologia, x = d[[s$var]], name = s$nome,
+                      orientation = "h", marker = list(color = s$cor),
+                      text = pct_br(d[[s$var]], 1), textposition = "none",
+                      hovertemplate = paste0("%{y}<br>", s$nome, ": %{text}<extra></extra>"))
+}
+g %>% tema_plotly(x_titulo = "% dos concluintes do tipo", legenda_visivel = TRUE,
+                  barmode = "group", bargap = 0.25, height = 560,
+                  xaxis = list(title = "% dos concluintes do tipo", range = c(0, 100),
+                               ticksuffix = "%", gridcolor = "#e6e8eb"),
+                  yaxis = list(title = "", automargin = TRUE),
+                  legend = list(orientation = "h", x = 0, y = 1.07, traceorder = "normal"))
+```
+
+```{r}
+#| label: tabela-es
+tab <- educacao %>% ordenar_c4() %>%
+  select(tipologia, concluintes, p_enem, nota_enem, p_es, p_es_pub, p_es_top, p_es_prv)
+
+reactable(
+  tab, pagination = FALSE, compact = TRUE, borderless = TRUE, highlight = TRUE, sortable = TRUE,
+  rowClass = linha_brasil(tab),
+  defaultColDef = colDef(align = "right", headerVAlign = "bottom", minWidth = 84),
+  columns = list(
+    tipologia = colDef(name = "Tipo", align = "left", minWidth = 170, cell = celula_tipo),
+    concluintes = colDef(name = "Concluintes", format = fmt_int),
+    p_enem = colDef(name = "Participou do Enem", format = fmt_pct(1)),
+    nota_enem = colDef(name = "Nota média Enem", format = fmt_dec(1)),
+    p_es = colDef(name = "Ingressou na ES até 2020", format = fmt_pct(1), minWidth = 96),
+    p_es_pub = colDef(name = "ES pública", format = fmt_pct(1)),
+    p_es_top = colDef(name = "Públicas de maior prestígio", format = fmt_pct(1), minWidth = 96),
+    p_es_prv = colDef(name = "ES privada", format = fmt_pct(1))
+  )
+)
+```
+
+```{r}
+#| label: legenda-es
+legenda(
+  fonte = paste0(fonte_sedap, " (", meta$extracao_sedap, ")."),
+  nota = "percentuais sobre os concluintes de cada tipo; um estudante pode ter ingressado nos setores público e privado em anos diferentes. Brasil: conjunto dos dez tipos, ponderado pelos concluintes; nota ponderada pelos participantes."
+)
+```
+
+## Mercado de trabalho formal em 2025
+
+```{r}
+#| label: grafico-trabalho
+d <- trabalho %>% filter(tipologia != "Brasil (dez tipos)") %>%
+  mutate(tipologia = fator_tipos(tipologia))
+series <- list(
+  list(var = "p_dirigentes", nome = "Dirigentes e profissionais", cor = "#c8553d"),
+  list(var = "p_tecnicos", nome = "Técnicos de nível médio", cor = "#d9a441"),
+  list(var = "p_servicos", nome = "Serviços e administrativos", cor = "#5b8db8"),
+  list(var = "p_industria", nome = "Produção industrial", cor = "#7a8794")
+)
+g <- plot_ly()
+for (s in series) {
+  g <- g %>% add_bars(data = d, y = ~tipologia, x = d[[s$var]], name = s$nome,
+                      orientation = "h", marker = list(color = s$cor),
+                      text = pct_br(d[[s$var]], 1), textposition = "none",
+                      hovertemplate = paste0("%{y}<br>", s$nome, ": %{text}<extra></extra>"))
+}
+g %>% add_markers(data = d, y = ~tipologia, x = ~p_ocupado, name = "Ocupados (total)",
+                  marker = list(symbol = "line-ns", size = 18, color = "#0f1b2d",
+                                line = list(width = 3, color = "#0f1b2d")),
+                  text = pct_br(d$p_ocupado, 1),
+                  hovertemplate = "%{y}<br>Ocupados: %{text}<extra></extra>") %>%
+  tema_plotly(legenda_visivel = TRUE, barmode = "stack", bargap = 0.3, height = 520,
+              xaxis = list(title = "% dos concluintes do tipo", range = c(0, 70),
+                           ticksuffix = "%", gridcolor = "#e6e8eb"),
+              yaxis = list(title = "", automargin = TRUE),
+              legend = list(orientation = "h", x = 0, y = 1.08))
+```
+
+```{r}
+#| label: tabela-trabalho
+tab <- trabalho %>% ordenar_c4() %>%
+  select(tipologia, p_coorte, p_ocupado, p_dirigentes, p_tecnicos, p_industria, p_servicos)
+reactable(
+  tab, pagination = FALSE, compact = TRUE, borderless = TRUE, highlight = TRUE, sortable = TRUE,
+  rowClass = linha_brasil(tab),
+  defaultColDef = colDef(align = "right", headerVAlign = "bottom", minWidth = 90, format = fmt_pct(1)),
+  columns = list(
+    tipologia = colDef(name = "Tipo", align = "left", minWidth = 170, cell = celula_tipo),
+    p_coorte = colDef(name = "% da coorte"),
+    p_ocupado = colDef(name = "Ocupados"),
+    p_dirigentes = colDef(name = "Dirigentes e profissionais", minWidth = 110),
+    p_tecnicos = colDef(name = "Técnicos"),
+    p_industria = colDef(name = "Indústria"),
+    p_servicos = colDef(name = "Serviços")
+  )
+)
+```
+
+```{r}
+#| label: legenda-trabalho
+legenda(
+  fonte = paste0(fonte_sedap, " (", meta$extracao_sedap, ")."),
+  nota = "percentuais sobre os concluintes do tipo. Ocupados: vínculo formal na Rais de 2025. Grandes grupos da CBO 2002: dirigentes e profissionais (1 e 2), técnicos de nível médio (3), serviços e administrativos (4 e 5) e produção industrial (7, 8 e 9); a diferença para o total corresponde a outros grupos."
+)
+```
+
+### Remuneração
+
+```{r}
+#| label: grafico-salarios
+d <- salarios %>% filter(tipologia != "Brasil (dez tipos)") %>%
+  arrange(mediana) %>%
+  mutate(tipologia = factor(tipologia, levels = tipologia),
+         cor = unname(PALETA_TIPOLOGIA[as.character(tipologia)]))
+
+plot_ly(d) %>%
+  add_segments(x = ~mediana, xend = ~q90, y = ~tipologia, yend = ~tipologia,
+               line = list(color = "#c9ced6", width = 6), name = "Mediana ao percentil 90",
+               hoverinfo = "none") %>%
+  add_markers(x = ~media, y = ~tipologia, name = "Média",
+              marker = list(symbol = "diamond", size = 10, color = "#0f1b2d"),
+              text = reais_br(d$media), hovertemplate = "%{y}<br>Média: %{text}<extra></extra>") %>%
+  add_markers(x = ~mediana, y = ~tipologia, name = "Mediana",
+              marker = list(size = 14, color = ~cor, line = list(color = "white", width = 1.5)),
+              text = reais_br(d$mediana), hovertemplate = "%{y}<br>Mediana: %{text}<extra></extra>") %>%
+  add_markers(x = ~q90, y = ~tipologia, name = "Percentil 90",
+              marker = list(symbol = "line-ns", size = 14, color = "#5b6573", line = list(width = 2, color = "#5b6573")),
+              text = reais_br(d$q90), hovertemplate = "%{y}<br>Percentil 90: %{text}<extra></extra>") %>%
+  tema_plotly(legenda_visivel = TRUE, height = 500,
+              xaxis = list(title = "R$ correntes de 2025", tickprefix = "R$ ", tickformat = ",.0f",
+                           gridcolor = "#e6e8eb"),
+              yaxis = list(title = "", automargin = TRUE),
+              legend = list(orientation = "h", x = 0, y = 1.08))
+```
+
+```{r}
+#| label: tabela-salarios
+tab <- salarios %>% ordenar_c4() %>% select(tipologia, media, mediana, dp, q90, q95, q99, q999)
+reactable(
+  tab, pagination = FALSE, compact = TRUE, borderless = TRUE, highlight = TRUE, sortable = TRUE,
+  rowClass = linha_brasil(tab),
+  defaultColDef = colDef(align = "right", headerVAlign = "bottom", minWidth = 84,
+                         cell = function(v) num_br(v, 0)),
+  columns = list(
+    tipologia = colDef(name = "Tipo", align = "left", minWidth = 170, cell = celula_tipo),
+    media = colDef(name = "Média"),
+    mediana = colDef(name = "Mediana"),
+    dp = colDef(name = "Desvio-padrão"),
+    q90 = colDef(name = "P90"), q95 = colDef(name = "P95"),
+    q99 = colDef(name = "P99"), q999 = colDef(name = "P99,9")
+  )
+)
+```
+
+```{r}
+#| label: legenda-salarios
+legenda(
+  fonte = paste0(fonte_sedap, " (", meta$extracao_sedap, ")."),
+  nota = "última remuneração nominal registrada em 2025 no vínculo selecionado, entre os ocupados, em R$ correntes; tipos ordenados pela mediana no gráfico. Brasil: média e desvio-padrão combinados a partir dos agregados por tipo; os percentis do conjunto não são recuperáveis (n.d.)."
+)
+```

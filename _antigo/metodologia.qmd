@@ -1,0 +1,102 @@
+---
+title: "Metodologia"
+subtitle: "Fontes, definições, versões e limites das informações apresentadas."
+page-layout: article
+---
+
+```{r}
+#| label: setup
+source("R/funcoes_site.R", encoding = "UTF-8")
+```
+
+## Fontes de dados
+
+- **Censo Escolar 2015 (Inep)**: cadastro das escolas que ofertam o Ensino Médio, dependência administrativa, localização, vínculos e infraestrutura. A coorte reúne os concluintes de 2015 nas etapas de conclusão do Ensino Médio regular, integrado à educação profissional e normal/magistério.
+- **Nível Socioeconômico das escolas (NSE)**: versão de Alves, Rodrigues e Senkevics (2023), em escala de 0 a 10, estimada para todas as escolas brasileiras.
+- **Indicadores do Inep**: Complexidade de Gestão (ICG, seis níveis) e Adequação da Formação Docente (AFD). **Indicador de Infraestrutura Escolar (IIE)**: Alcantara (2025).
+- **Enem 2015 a 2019, Censo da Educação Superior 2016 a 2020 e Rais 2025**: acompanhamento longitudinal da coorte, pareado pelo CPF mascarado no Serviço de Acesso a Dados Protegidos (Sedap/Inep).
+- **Censo Demográfico 2010 (IBGE)**: renda domiciliar per capita do entorno das escolas (raio de 400 metros, com complementação pela área de ponderação) e características das áreas de ponderação; malhas territoriais do pacote geobr.
+- **Ranking Universitário Folha (RUF) 2015**: lista das universidades públicas de maior prestígio e das 50 instituições mais bem posicionadas.
+
+## Duas bases, duas finalidades
+
+O site combina duas bases que não coincidem exatamente:
+
+1. **Resultados por tipo** (página Estratificação): tabelas agregadas liberadas na `r meta$extracao_sedap`, com `r num_br(meta$n_concluintes_sedap)` concluintes com CPF. São as mesmas das Tabelas 3, 4 e 5 do capítulo.
+2. **Escolas, mapa e indicadores** (páginas A tipologia e Explorar escolas): base local de `r num_br(meta$n_escolas)` escolas, com a tipologia na versão `r meta$versao_tipologia` e a coorte local de `r num_br(meta$n_concluintes_local)` concluintes dos dez tipos. As regras da tipologia foram revisadas depois da 3ª extração; por isso, as contagens de escolas por tipo diferem das tabelas do Sedap, sobretudo nas escolas com vínculo e com localização diferenciados.
+
+## Regras da tipologia
+
+```{r}
+#| label: cortes
+cortes <- meta$cortes_nse
+div(class = "painel",
+    tags$ol(
+      tags$li(strong("Federal"), " e ", strong("Municipal"), " pela dependência administrativa; as municipais ficam fora dos dez tipos."),
+      tags$li(strong("Vínculo diferenciado"), ": estaduais vinculadas a universidade estadual, a forças de segurança ou a rede técnica (órgão de vinculação do Censo Escolar 2019, único ano com a variável), estaduais com mais de 50% dos concluintes na educação profissional, escolas do Sistema S e escolas identificadas pelo nome ou pela sigla de universidade estadual da UF."),
+      tags$li(strong("Localização diferenciada"), ": estaduais com localização diferenciada no Censo Escolar (assentamento, terra indígena, quilombo, comunidades tradicionais) ou com nome que identifica a localização (quilombola, agrícola, indígena, do campo, rural)."),
+      tags$li(strong("NSE"), ": cortes nos quantis 25, 70, 95 e 99 calculados sobre ", num_br(cortes$escolas_referencia[1]),
+              " escolas estaduais e privadas com NSE registrado (", paste0("NSE ", num_br(cortes$corte, 3), collapse = "; "),
+              "). Estaduais formam os estratos I, II e III (III reúne as acima do quantil 70); privadas, os estratos I-II, III, IV e V.")
+    ),
+    p("Precedência: Federal > Municipal > vínculo > localização > NSE > sem informações."))
+```
+
+## Indicadores das escolas
+
+| Indicador | Definição |
+|:--|:--|
+| Concluintes | Estudantes da coorte de 2015 na escola (aprovados nas etapas de conclusão, com CPF). |
+| NSE | Nível socioeconômico médio dos estudantes, de 0 a 10. |
+| ICG | Nível de complexidade de gestão, de 1 a 6; nos agregados, percentual de escolas nos níveis 5 e 6. |
+| AFD adequada | Percentual de docências com formação adequada (grupos 1 e 2). |
+| IIE | Indicador de Infraestrutura Escolar, reescalado de 0 a 100. |
+| Renda do entorno | Renda domiciliar per capita dos setores censitários em um raio de 400 metros (Censo 2010), em salários mínimos de 2015 (R$ 788). |
+| PPI | Pretos, pardos e indígenas entre os concluintes com cor ou raça declarada; exibido só com ao menos `r meta$min_concluintes` declarantes. |
+
+## Resultados dos egressos
+
+| Resultado | Definição |
+|:--|:--|
+| Participou do Enem | Nota nas provas objetivas em ao menos uma edição de 2015 a 2019. |
+| Nota média Enem | Média das quatro provas objetivas. |
+| Ingressou na ES | Matrícula como ingressante em curso de graduação de 2016 a 2020. |
+| ES pública / privada | Ingresso em instituição pública ou privada; um estudante pode aparecer nos dois setores. |
+| Públicas de maior prestígio | 25 universidades públicas selecionadas a partir do RUF 2015. |
+| 50 primeiras do RUF | Ingresso, de 2016 a 2020, em uma das 50 instituições mais bem posicionadas no RUF 2015, públicas e privadas. |
+| Ocupados | Vínculo formal na Rais de 2025. |
+| Grupos ocupacionais | Grandes grupos da CBO 2002 do vínculo selecionado. |
+
+## Áreas de ponderação
+
+As áreas de ponderação são as menores unidades geográficas com estimativas da amostra do Censo Demográfico. No mapa, cada área pode ser colorida pela renda domiciliar per capita (soma dos rendimentos dos domicílios dividida pela população residente, corrigida pelo INPC de julho de 2010 a janeiro de 2015), pela densidade demográfica (população residente por km² da malha do geobr), pela população residente, pela infraestrutura urbana média dos setores e pela participação das escolas do topo da hierarquia entre as escolas de Ensino Médio da área`r if (isTRUE(meta$tem_raca_ap)) ", além da composição racial da população" else ""`. As geometrias foram simplificadas para a web (tolerância de `r TOLERANCIA_SIMPLIFICACAO_AP` metros) e servem para visualização, não para cálculo de áreas.
+
+## Proteção das informações
+
+- Os resultados por tipo são agregados liberados pelo Sedap/Inep após análise de risco de revelação.
+- Nas escolas com menos de `r meta$min_concluintes` concluintes na coorte, os resultados dos egressos não são exibidos.
+- Nenhuma informação individual de estudantes é publicada.
+`r if (!isTRUE(meta$publicar_pbf)) "- O percentual de beneficiários do Programa Bolsa Família, analisado no capítulo, não é publicado neste site enquanto a autorização de divulgação dos dados do CadÚnico não estiver confirmada." else ""`
+
+## Limites
+
+A coorte exclui os 19,5% de matrículas sem CPF, e essa perda varia entre os tipos. A Rais cobre apenas o emprego formal, o que subestima a ocupação de quem estuda, trabalha por conta própria ou está no exterior. Os pontos de corte do NSE têm caráter heurístico, e parte dos indicadores escolares depende de fontes com datas distintas. As comparações são descritivas: não separam o efeito das escolas da seleção social de seus estudantes.
+
+## Como citar
+
+Alcantara, Victor G. *A Escola e a Estratificação: um estudo da associação entre escola de origem e acesso à educação superior no Brasil*. Tese (Doutorado em Sociologia). Programa de Pós-Graduação em Sociologia, Universidade de São Paulo. Capítulo 4: A estratificação social das escolas.
+
+## Referências
+
+ALCANTARA, Victor Gabriel. Indicador de infraestrutura escolar para escolas brasileiras. *Estudos em Avaliação Educacional*, v. 36, e11835, 2025. DOI: [10.18222/eae.v36.11835](https://doi.org/10.18222/eae.v36.11835).
+
+ALVES, Maria Teresa Gonzaga; RODRIGUES, Clarissa Guimarães; SENKEVICS, Adriano Souza. Nível socioeconômico das escolas brasileiras. *Cadernos de Estudos e Pesquisas em Políticas Educacionais*, v. 9, 2023. DOI: [10.24109/9786558011026.ceppe.v9.5971](https://doi.org/10.24109/9786558011026.ceppe.v9.5971).
+
+INEP. *Nota Técnica nº 040/2014*: indicador para mensurar a complexidade da gestão nas escolas a partir dos dados do Censo Escolar da Educação Básica. Brasília: Inep, 2014.
+
+INEP. *Nota Técnica nº 020/2014*: indicador de adequação da formação do docente da educação básica. Brasília: Inep, 2014.
+
+```{r}
+#| label: rodape
+p(class = "legenda-fig", paste0("Dados preparados em ", meta$gerado_em, ". Tipologia ", meta$versao_tipologia, "."))
+```

@@ -1,0 +1,87 @@
+---
+title: "Sobre os dados"
+subtitle: "Definições dos indicadores e dos resultados, fontes e cuidados na divulgação."
+page-layout: article
+---
+
+```{r}
+#| label: setup
+source("R/funcoes_site.R", encoding = "UTF-8")
+definicoes <- definicoes_tipo()
+```
+
+O site reúne as escolas brasileiras que ofertam o Ensino Médio, classificadas em tipos escolares, e os resultados dos concluintes de 2015 no Enem, na educação superior e no mercado de trabalho formal. A análise completa está no texto da tese.
+
+## Tipos escolares
+
+```{r}
+#| label: tipos
+div(class = "lista-tipos",
+    lapply(names(definicoes), function(t) div(class = "item-tipo", etiqueta_tipo(t), span(definicoes[[t]]))))
+```
+
+Cada escola recebe um único tipo, na ordem: Federal, Municipal, vínculo diferenciado, localização diferenciada e, por fim, NSE. Os cortes do NSE são calculados sobre as `r num_br(meta$cortes_nse$escolas_referencia[1])` escolas estaduais e privadas com NSE registrado.
+
+## Características das escolas
+
+| Indicador | Definição |
+|:--|:--|
+| Concluintes | Estudantes da coorte de 2015 na escola (aprovados nas etapas de conclusão, com CPF). |
+| NSE | Nível socioeconômico médio dos estudantes, de 0 a 10. |
+| ICG | Nível de complexidade de gestão, de 1 a 6. |
+| AFD adequada | Percentual de docências com formação adequada (grupos 1 e 2). |
+| IIE | Indicador de Infraestrutura Escolar, de 0 a 100. |
+| Renda do entorno | Renda domiciliar per capita dos setores censitários em um raio de 400 metros (Censo 2010), em salários mínimos de 2015 (R$ 788). |
+| PPI | Pretos, pardos e indígenas entre os concluintes com cor ou raça declarada; exibido só com ao menos `r meta$min_concluintes` declarantes. |
+
+## Resultados dos egressos
+
+| Resultado | Definição |
+|:--|:--|
+| Participou do Enem | Nota nas provas objetivas em ao menos uma edição de 2015 a 2019. |
+| Nota média Enem | Média das quatro provas objetivas. |
+| Ingressou na ES | Matrícula como ingressante em curso de graduação de 2016 a 2020. |
+| ES pública / privada | Ingresso em instituição pública ou privada; um estudante pode aparecer nos dois setores. |
+| Públicas de maior prestígio | 25 universidades públicas selecionadas a partir do Ranking Universitário Folha (RUF) 2015. |
+| 50 primeiras do RUF | Ingresso, de 2016 a 2020, em uma das 50 instituições mais bem posicionadas no RUF 2015, públicas e privadas. |
+| Ocupados | Vínculo formal na Rais de 2025. |
+
+## Áreas de ponderação no mapa
+
+As áreas de ponderação são as menores unidades geográficas com estimativas da amostra do Censo Demográfico 2010. No mapa, cada área pode ser colorida pela renda domiciliar per capita (corrigida pelo INPC para janeiro de 2015), pela densidade demográfica (população por km² da malha do geobr), pela população residente, pela infraestrutura urbana média dos setores e pela participação das escolas de maior prestígio entre as escolas de Ensino Médio da área. As geometrias foram simplificadas para a web e servem para visualização, não para cálculo de áreas. Áreas sem valor na variável escolhida aparecem em cinza; a legenda informa a parcela de áreas com valor. Quando disponível, o painel do mapa permite alternar para o Censo 2022, com estimativas por área de ponderação calculadas a partir da amostra do Censo Demográfico 2022 (renda domiciliar per capita em salários mínimos de agosto de 2022, população e densidade); áreas com menos de 30 domicílios na amostra ficam sem valor.
+
+## Fontes
+
+- **Censo Escolar 2015 (Inep)**: cadastro, dependência administrativa, localização, vínculos e infraestrutura.
+- **NSE das escolas**: Alves, Rodrigues e Senkevics (2023). **IIE**: Alcantara (2025). **ICG e AFD**: indicadores do Inep (notas técnicas 040/2014 e 020/2014).
+- **Enem 2015 a 2019, Censo da Educação Superior 2016 a 2020 e Rais 2025**: acompanhamento da coorte, pareado pelo CPF mascarado no Serviço de Acesso a Dados Protegidos (Sedap/Inep).
+- **Censo Demográfico 2010 (IBGE)** e malhas do pacote geobr. **RUF 2015**: Folha de S.Paulo.
+- **Mapas base**: Esri e OpenStreetMap, selecionáveis no painel do mapa.
+
+Duas bases alimentam o site. As escolas, o mapa e a tabela usam a base local (`r num_br(meta$n_escolas)` escolas; tipologia `r meta$versao_tipologia`). A página Por tipo usa as tabelas agregadas da `r meta$extracao_sedap`, com `r num_br(meta$n_concluintes_sedap)` concluintes. Como as regras da tipologia foram revisadas depois dessa extração, as contagens por tipo diferem levemente entre as duas.
+
+## Proteção das informações
+
+- Nas escolas com menos de `r meta$min_concluintes` concluintes na coorte, os resultados dos egressos não são exibidos (supr.).
+- Os resultados por tipo são agregados liberados pelo Sedap/Inep após análise de risco de revelação.
+- Nenhuma informação individual de estudantes é publicada.
+`r if (!isTRUE(meta$publicar_pbf)) "- Informações do CadÚnico (Programa Bolsa Família) não são publicadas." else ""`
+
+## Limites
+
+A coorte exclui os 19,5% de matrículas sem CPF, e essa perda varia entre os tipos. A Rais cobre apenas o emprego formal. Os pontos de corte do NSE têm caráter heurístico. As comparações são descritivas: não separam o efeito das escolas da seleção social de seus estudantes.
+
+## Dados e citação
+
+O download da base completa por escola está desativado por ora, pois a tese está em desenvolvimento.
+
+Alcantara, Victor G. *A Escola e a Estratificação: um estudo da associação entre escola de origem e acesso à educação superior no Brasil*. Tese (Doutorado em Sociologia), Programa de Pós-Graduação em Sociologia, Universidade de São Paulo.
+
+ALCANTARA, Victor Gabriel. Indicador de infraestrutura escolar para escolas brasileiras. *Estudos em Avaliação Educacional*, v. 36, e11835, 2025. DOI: [10.18222/eae.v36.11835](https://doi.org/10.18222/eae.v36.11835).
+
+ALVES, Maria Teresa Gonzaga; RODRIGUES, Clarissa Guimarães; SENKEVICS, Adriano Souza. Nível socioeconômico das escolas brasileiras. *Cadernos de Estudos e Pesquisas em Políticas Educacionais*, v. 9, 2023. DOI: [10.24109/9786558011026.ceppe.v9.5971](https://doi.org/10.24109/9786558011026.ceppe.v9.5971).
+
+```{r}
+#| label: rodape
+p(class = "legenda-fig", paste0("Dados preparados em ", meta$gerado_em, ". Tipologia ", meta$versao_tipologia, "."))
+```

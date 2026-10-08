@@ -1,0 +1,9 @@
+# Cache local do preparo dos dados (coorte e malhas); nao versionar
+dados/_cache/
+.quarto/
+*_files/
+.Rhistory
+.Rproj.user/
+
+/.quarto/
+**/*.quarto_ipynb

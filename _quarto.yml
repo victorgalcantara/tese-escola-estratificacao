@@ -1,0 +1,63 @@
+project:
+  type: website
+  output-dir: docs
+  pre-render: R/02_gerar_json.R
+  resources:
+    - dados/escolas_mapa.json
+    - dados/areas_ponderacao*.geojson
+    - assets/*.js
+
+lang: pt-BR
+
+website:
+  title: "Origens & Destinos"
+  description: "Explore as escolas brasileiras de Ensino Médio: tipo, características, resultados dos egressos e localização."
+  site-url: "https://victorgalcantara.github.io/tipologia-escolas"
+  repo-url: "https://github.com/victorgalcantara/tipologia-escolas"
+  page-navigation: false
+  back-to-top-navigation: true
+  navbar:
+    background: "#0f1b2d"
+    foreground: "#f5f1e8"
+    left:
+      - href: index.qmd
+        text: "Home"
+      - href: tese.qmd
+        text: "A tese"
+      - href: escolas.qmd
+        text: "Escolas"
+      - href: tipos.qmd
+        text: "Por tipo"
+      - href: sobre.qmd
+        text: "Sobre os dados"
+      - href: referencias.qmd
+        text: "Referências"
+    right:
+      - icon: github
+        href: "https://github.com/victorgalcantara/tipologia-escolas"
+        aria-label: GitHub
+  page-footer:
+    left: "Victor G Alcantara · PPGS/USP"
+    right: "Construído em R e Quarto"
+
+format:
+  html:
+    theme:
+      - cosmo
+      - assets/styles.scss
+    toc: false
+    smooth-scroll: true
+    link-external-newwindow: true
+    embed-resources: false
+    include-after-body:
+      text: |
+        <script>(function(){var a=document.querySelector(".navbar .nav-link.active");document.title="OED - "+(a?a.textContent.trim():"Home");})();</script>
+    grid:
+      body-width: 1100px
+      margin-width: 220px
+
+execute:
+  echo: false
+  warning: false
+  message: false
+  freeze: false
